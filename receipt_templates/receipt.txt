@@ -1,0 +1,40 @@
+{#
+ Jinja2 text receipt template for 40-column thermal printers.
+ This is a plain-text layout similar to the example screenshot.
+#}
+{% set w = 40 %}
+
+{{ store_name|default('ANEKA Restoran')|upper|center(w) }}
+{{ '-'|center(w) }}
+{{ address_line_1|center(w) }}
+{{ address_line_2|center(w) }}
+{{ city_line|center(w) }}
+NPWPP : {{ npwp }}
+Telp  : {{ phone }}
+Email : {{ email }}
+{{ tagline|center(w) }}
+
+{{ date }}{{ ' ' * (w - (date|length) - (time|length)) }}{{ time }}
+{{ invoice_no }}
+{{ cashier_label|rjust(w) }}
+{{ '-' * w }}
+
+{% for item in items %}
+{{ item.prefix }} {{ item.name|truncate(w - 7) }}
+{{ (item.qty|string)|rjust(3) }}  x {{ item.price|rjust(w - 7) }}
+{% endfor %}
+
+{{ '-' * w }}
+Total{{ total|rjust(w - 5) }}
+Tax{{ tax|rjust(w - 3) }}
+Cash{{ cash|rjust(w - 4) }}
+Kembali{{ change|rjust(w - 7) }}
+Item : {{ total_items }}
+Qty  : {{ total_qty }}
+
+Anda Mendapatkan {{ points }} Poin Rewards
+
+Harga Sudah Termasuk PPN
+Terimakasih Atas Kunjungan Anda
+Penukaran Barang max 7 hari
+dengan membawa nota asli

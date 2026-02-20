@@ -1,0 +1,24 @@
+{#
+ Jinja2 text template for kitchen printer (40-column).
+ Fields expected in context:
+   order_no, table_no, customer_name,
+   items: list of { name, qty },
+   kitchen_note (optional free text).
+#}
+{% set w = 40 %}
+
+{{ 'KITCHEN ORDER'|center(w) }}
+{{ '-' * w }}
+Order No : {{ order_no }}
+Table No : {{ table_no }}
+Customer : {{ customer_name }}
+{{ '-' * w }}
+
+{% for item in items %}
+{{ item.name|upper|truncate(w) }}
+Qty : {{ item.qty }}
+
+{% endfor %}
+{{ '-' * w }}
+--- Kitchen Note ---
+{{ kitchen_note }}
