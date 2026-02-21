@@ -1,0 +1,54 @@
+{#
+ Close Bill Template for 40-column thermal printers
+ Payment summary with payment method breakdown
+#}
+{% set w = 40 %}
+
+{{ store_name|default('ANEKA Restoran')|upper|center(w) }}
+{{ '-'|center(w) }}
+{{ address_line_1|center(w) }}
+{{ address_line_2|center(w) }}
+{{ city_line|center(w) }}
+NPWP  : {{ npwp }}
+Telp  : {{ phone }}
+Email : {{ email }}
+
+{{ date }}{{ ' ' * (w - (date|length) - (time|length)) }}{{ time }}
+Bill No: {{ bill_no }}
+Table  : {{ table_no }}
+{{ cashier_label|rjust(w) }}
+{{ '-' * w }}
+
+CLOSE BILL SUMMARY
+
+{% for item in items %}
+{{ item.prefix }} {{ item.name|truncate(w - 7) }}
+{{ (item.qty|string)|rjust(3) }} x {{ item.price|rjust(w - 7) }}
+{% endfor %}
+
+{{ '-' * w }}
+Subtotal{{ subtotal|rjust(w - 8) }}
+Tax{{ tax|rjust(w - 3) }}
+{% if discount %}
+Discount{{ discount|rjust(w - 8) }}
+{% endif %}
+{{ '=' * w }}
+TOTAL{{ total|rjust(w - 5) }}
+{{ '=' * w }}
+
+PAYMENT DETAILS
+{{ '-' * w }}
+{% for payment in payments %}
+{{ payment.type|ljust(20) }}{{ payment.amount|rjust(w - 20) }}
+{% endfor %}
+{{ '-' * w }}
+Total Payment{{ total_payment|rjust(w - 13) }}
+Change{{ change|rjust(w - 6) }}
+{{ '-' * w }}
+
+Item : {{ total_items }}
+Qty  : {{ total_qty }}
+
+{{ tagline|center(w) }}
+Terimakasih Atas Kunjungan Anda
+

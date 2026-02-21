@@ -1,0 +1,86 @@
+{#
+ Invoice Template for 40-column thermal printers
+ Formal invoice with detailed information
+#}
+{% set w = 40 %}
+
+{{ '=' * w }}
+{{ 'INVOICE'|center(w) }}
+{{ '=' * w }}
+
+{{ store_name|upper|center(w) }}
+{{ address_line_1|center(w) }}
+{{ address_line_2|center(w) }}
+{{ city_line|center(w) }}
+NPWP  : {{ npwp }}
+Telp  : {{ phone }}
+Email : {{ email }}
+Website: {{ website|default('-') }}
+
+{{ '-' * w }}
+
+Invoice No : {{ invoice_no }}
+Date       : {{ date }}
+Time       : {{ time }}
+Due Date   : {{ due_date|default('-') }}
+
+{{ '-' * w }}
+
+BILL TO:
+{{ customer_name }}
+{% if customer_address %}
+{{ customer_address }}
+{% endif %}
+{% if customer_phone %}
+Phone: {{ customer_phone }}
+{% endif %}
+
+{{ '-' * w }}
+
+ITEM DESCRIPTION
+
+{% for item in items %}
+{{ item.no|ljust(3) }} {{ item.name|truncate(w - 5) }}
+    {{ (item.qty|string) }} x {{ item.unit_price }}
+    {% if item.discount %}Disc: {{ item.discount }}{% endif %}
+    {{ 'Amount:'|ljust(w - item.amount|length - 4) }}{{ item.amount }}
+
+{% endfor %}
+{{ '-' * w }}
+
+Subtotal   {{ subtotal|rjust(w - 11) }}
+{% if discount %}
+Discount   {{ discount|rjust(w - 11) }}
+{% endif %}
+Tax ({{ tax_rate|default('10') }}%){{ tax|rjust(w - 11) }}
+{% if service_charge %}
+Service    {{ service_charge|rjust(w - 11) }}
+{% endif %}
+{{ '=' * w }}
+GRAND TOTAL{{ total|rjust(w - 11) }}
+{{ '=' * w }}
+
+{% if payment_status %}
+Payment Status: {{ payment_status }}
+{% endif %}
+{% if payment_method %}
+Payment Method: {{ payment_method }}
+{% endif %}
+
+{{ '-' * w }}
+
+NOTES:
+{% if notes %}
+{{ notes }}
+{% else %}
+Thank you for your business!
+{% endif %}
+
+{{ '-' * w }}
+{{ tagline|center(w) }}
+
+Authorized Signature:
+
+
+__________________________
+
