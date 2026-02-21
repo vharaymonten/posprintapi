@@ -36,6 +36,11 @@ class PrintService:
             trim_blocks=True,
             lstrip_blocks=True,
         )
+        
+        # Add custom filters for text formatting
+        self._env.filters['rjust'] = lambda s, width, fillchar=' ': str(s).rjust(width, fillchar)
+        self._env.filters['ljust'] = lambda s, width, fillchar=' ': str(s).ljust(width, fillchar)
+        self._env.filters['truncate'] = lambda s, length, end='...': str(s)[:length] if len(str(s)) <= length else str(s)[:length-len(end)] + end
 
     def render_template(self, template_name: str, metadata: dict) -> str:
         """Render a Jinja2 template by name with the given metadata.
