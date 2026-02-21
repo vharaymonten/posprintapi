@@ -27,7 +27,7 @@ API endpoint: `POST /api/v1/initiate-print`
 | `table_no` | string | Yes | Table number |
 | `customer_name` | string | Yes | Customer name |
 | `items` | array | Yes | Array of order items |
-| `items[].name` | string | Yes | Item name (will be displayed in bold) |
+| `items[].name` | string | Yes | Item name (displayed in **bold + double-height**) |
 | `items[].qty` | integer | Yes | Item quantity |
 | `items[].note` | string | No | Special notes for this item |
 | `kitchen_note` | string | No | Special instructions for kitchen |
@@ -64,7 +64,7 @@ API endpoint: `POST /api/v1/initiate-print`
 | `table_no` | string | Yes | Table number |
 | `customer_name` | string | Yes | Customer name |
 | `items` | array | Yes | Array of order items |
-| `items[].name` | string | Yes | Item name (will be displayed in bold) |
+| `items[].name` | string | Yes | Item name (displayed in **bold + double-height**) |
 | `items[].qty` | integer | Yes | Item quantity |
 | `items[].note` | string | No | Special notes for this item |
 | `checker_note` | string | No | Special instructions for checker/waiter |
@@ -366,7 +366,7 @@ API endpoint: `POST /api/v1/initiate-print`
 | `time` | string | Yes | Order time (HH:MM:SS) |
 | `items` | array | Yes | Array of drink items |
 | `items[].qty` | integer | Yes | Quantity of drinks |
-| `items[].name` | string | Yes | Drink/beverage name (will be displayed in bold) |
+| `items[].name` | string | Yes | Drink/beverage name (displayed in **bold + double-height**, centered) |
 | `items[].note` | string | No | Special preparation notes (e.g., "Extra lime", "No ice") |
 | `total_qty` | integer | Yes | Total quantity of all drinks |
 | `special_note` | string | No | Special instructions or priority notes |
@@ -455,4 +455,12 @@ API endpoint: `POST /api/v1/initiate-print`
 - **Times**: Use 24-hour format (HH:MM:SS) for times
 - **Printer Selection**: Use either `printer_code` (configured in YAML) or `printer_id` (from API). If both omitted, returns preview only
 - **Template Extensions**: Always include `.txt` extension in `template_name` (e.g., "receipt.txt", not "receipt")
-- **Line Width**: All templates are designed for 40-column thermal printers
+- **Line Width**: 
+  - Kitchen, Checker, Receipt, CloseBill, Invoice: 40 columns
+  - Bar: 48 columns (wider format)
+- **Text Formatting**:
+  - Item names are displayed in **bold** text
+  - Kitchen, Checker, and Bar templates use **double-height** text for item names (2x taller)
+  - Receipt, CloseBill, and Invoice use normal-height bold text
+- **Item Notes**: All templates support optional `note` field at item level for special instructions
+- **Template Count**: 6 templates available (Kitchen, Checker, Receipt, CloseBill, Invoice, Bar)
