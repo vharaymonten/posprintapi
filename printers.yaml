@@ -5,6 +5,11 @@ printers:
     printer_code: "BAR"
     host: "192.168.3.162"
     port: 9100
+
+  - name: "CHECKER"
+    printer_code: "CHECKER"
+    host: "192.168.3.163"
+    port: 9100
   
   - name: "Cashier Printer"
     printer_code: "CASHIER_2"
