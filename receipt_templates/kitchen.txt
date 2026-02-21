@@ -15,8 +15,11 @@ Customer : {{ customer_name }}
 {{ '-' * w }}
 
 {% for item in items %}
-{{ item.name|upper|truncate(w) }}
+{{ DOUBLE_SIZE_ON }}{{ item.name|upper|truncate(20) }}{{ NORMAL_SIZE }}
 Qty : {{ item.qty }}
+{% if item.note %}
+Note: {{ item.note|truncate(w - 6) }}
+{% endif %}
 
 {% endfor %}
 {{ '-' * w }}

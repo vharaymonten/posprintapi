@@ -32,10 +32,10 @@ curl -X POST "$API_URL" \
       \"table_no\": \"7\",
       \"customer_name\": \"Budi Santoso\",
       \"items\": [
-        {\"name\": \"Nasi Goreng Special\", \"qty\": 2},
-        {\"name\": \"Sate Ayam (10 tusuk)\", \"qty\": 1},
+        {\"name\": \"Nasi Goreng Special\", \"qty\": 2, \"note\": \"Pedas sedang, tanpa terasi\"},
+        {\"name\": \"Sate Ayam (10 tusuk)\", \"qty\": 1, \"note\": \"Matang sempurna\"},
         {\"name\": \"Gado-Gado\", \"qty\": 1},
-        {\"name\": \"Es Teh Manis\", \"qty\": 2},
+        {\"name\": \"Es Teh Manis\", \"qty\": 2, \"note\": \"Gula sedikit\"},
         {\"name\": \"Es Jeruk\", \"qty\": 1}
       ],
       \"kitchen_note\": \"Nasi goreng: pedas sedang\\nSate: matang sempurna\"
@@ -72,13 +72,15 @@ curl -X POST "$API_URL" \
           \"prefix\": \"1.\",
           \"name\": \"Nasi Goreng Special\",
           \"qty\": 2,
-          \"price\": \"Rp 90.000\"
+          \"price\": \"Rp 90.000\",
+          \"note\": \"Pedas sedang\"
         },
         {
           \"prefix\": \"2.\",
           \"name\": \"Sate Ayam (10 tusuk)\",
           \"qty\": 1,
-          \"price\": \"Rp 35.000\"
+          \"price\": \"Rp 35.000\",
+          \"note\": \"Matang sempurna\"
         },
         {
           \"prefix\": \"3.\",
@@ -90,7 +92,8 @@ curl -X POST "$API_URL" \
           \"prefix\": \"4.\",
           \"name\": \"Es Teh Manis\",
           \"qty\": 2,
-          \"price\": \"Rp 10.000\"
+          \"price\": \"Rp 10.000\",
+          \"note\": \"Gula sedikit\"
         },
         {
           \"prefix\": \"5.\",

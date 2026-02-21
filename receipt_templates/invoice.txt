@@ -40,9 +40,10 @@ Phone: {{ customer_phone }}
 ITEM DESCRIPTION
 
 {% for item in items %}
-{{ item.no|ljust(3) }} {{ item.name|truncate(w - 5) }}
+{{ item.no|ljust(3) }} {{ DOUBLE_SIZE_ON }}{{ item.name|truncate(20) }}{{ NORMAL_SIZE }}
     {{ (item.qty|string) }} x {{ item.unit_price }}
     {% if item.discount %}Disc: {{ item.discount }}{% endif %}
+    {% if item.note %}Note: {{ item.note|truncate(w - 10) }}{% endif %}
     {{ 'Amount:'|ljust(w - item.amount|length - 4) }}{{ item.amount }}
 
 {% endfor %}

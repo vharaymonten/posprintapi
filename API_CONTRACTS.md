@@ -27,8 +27,9 @@ API endpoint: `POST /api/v1/initiate-print`
 | `table_no` | string | Yes | Table number |
 | `customer_name` | string | Yes | Customer name |
 | `items` | array | Yes | Array of order items |
-| `items[].name` | string | Yes | Item name |
+| `items[].name` | string | Yes | Item name (will be displayed in bold) |
 | `items[].qty` | integer | Yes | Item quantity |
+| `items[].note` | string | No | Special notes for this item |
 | `kitchen_note` | string | No | Special instructions for kitchen |
 
 ### Example Request
@@ -42,7 +43,7 @@ API endpoint: `POST /api/v1/initiate-print`
     "table_no": "7",
     "customer_name": "Budi Santoso",
     "items": [
-      {"name": "Nasi Goreng Special", "qty": 2},
+      {"name": "Nasi Goreng Special", "qty": 2, "note": "Pedas sedang, tanpa terasi"},
       {"name": "Sate Ayam (10 tusuk)", "qty": 1},
       {"name": "Es Teh Manis", "qty": 2}
     ],
@@ -73,9 +74,10 @@ API endpoint: `POST /api/v1/initiate-print`
 | `cashier_label` | string | Yes | Cashier name (e.g., "Kasir: Alice") |
 | `items` | array | Yes | Array of purchased items |
 | `items[].prefix` | string | Yes | Item number prefix (e.g., "1.") |
-| `items[].name` | string | Yes | Item name |
+| `items[].name` | string | Yes | Item name (will be displayed in bold) |
 | `items[].qty` | integer | Yes | Item quantity |
 | `items[].price` | string | Yes | Item total price (formatted) |
+| `items[].note` | string | No | Special notes for this item |
 | `total` | string | Yes | Grand total (formatted with Rp) |
 | `tax` | string | Yes | Tax amount (formatted with Rp) |
 | `cash` | string | Yes | Cash received (formatted with Rp) |
@@ -108,7 +110,8 @@ API endpoint: `POST /api/v1/initiate-print`
         "prefix": "1.",
         "name": "Nasi Goreng Special",
         "qty": 2,
-        "price": "Rp 90.000"
+        "price": "Rp 90.000",
+        "note": "Pedas sedang, tanpa terasi"
       },
       {
         "prefix": "2.",
@@ -150,9 +153,10 @@ API endpoint: `POST /api/v1/initiate-print`
 | `cashier_label` | string | Yes | Cashier name (e.g., "Kasir: Alice") |
 | `items` | array | Yes | Array of purchased items |
 | `items[].prefix` | string | Yes | Item number prefix (e.g., "1.") |
-| `items[].name` | string | Yes | Item name |
+| `items[].name` | string | Yes | Item name (will be displayed in bold) |
 | `items[].qty` | integer | Yes | Item quantity |
 | `items[].price` | string | Yes | Item total price (formatted) |
+| `items[].note` | string | No | Special notes for this item |
 | `subtotal` | string | Yes | Subtotal before tax (formatted with Rp) |
 | `tax` | string | Yes | Tax amount (formatted with Rp) |
 | `discount` | string | No | Discount amount (formatted with Rp) |
@@ -190,7 +194,8 @@ API endpoint: `POST /api/v1/initiate-print`
         "prefix": "1.",
         "name": "Nasi Goreng Special",
         "qty": 2,
-        "price": "Rp 90.000"
+        "price": "Rp 90.000",
+        "note": "Pedas sedang, tanpa terasi"
       },
       {
         "prefix": "2.",
@@ -241,10 +246,11 @@ API endpoint: `POST /api/v1/initiate-print`
 | `customer_phone` | string | No | Customer phone number |
 | `items` | array | Yes | Array of invoice line items |
 | `items[].no` | string | Yes | Item sequence number |
-| `items[].name` | string | Yes | Item/service description |
+| `items[].name` | string | Yes | Item/service description (will be displayed in bold) |
 | `items[].qty` | integer | Yes | Quantity |
 | `items[].unit_price` | string | Yes | Price per unit (formatted with Rp) |
 | `items[].discount` | string | No | Discount per item (formatted with Rp) |
+| `items[].note` | string | No | Special notes for this item |
 | `items[].amount` | string | Yes | Line total (formatted with Rp) |
 | `subtotal` | string | Yes | Subtotal before tax (formatted with Rp) |
 | `discount` | string | No | Total discount (formatted with Rp) |
@@ -285,7 +291,8 @@ API endpoint: `POST /api/v1/initiate-print`
         "name": "Paket Nasi Box (50 pax)",
         "qty": 50,
         "unit_price": "Rp 35.000",
-        "amount": "Rp 1.750.000"
+        "amount": "Rp 1.750.000",
+        "note": "Termasuk nasi putih, ayam goreng, sayur"
       },
       {
         "no": "2",
@@ -322,7 +329,7 @@ API endpoint: `POST /api/v1/initiate-print`
 | `time` | string | Yes | Order time (HH:MM:SS) |
 | `items` | array | Yes | Array of drink items |
 | `items[].qty` | integer | Yes | Quantity of drinks |
-| `items[].name` | string | Yes | Drink/beverage name |
+| `items[].name` | string | Yes | Drink/beverage name (will be displayed in bold) |
 | `items[].note` | string | No | Special preparation notes (e.g., "Extra lime", "No ice") |
 | `total_qty` | integer | Yes | Total quantity of all drinks |
 | `special_note` | string | No | Special instructions or priority notes |

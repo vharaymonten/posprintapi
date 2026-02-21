@@ -44,13 +44,15 @@ curl -X POST "$API_URL" \
           \"prefix\": \"1.\",
           \"name\": \"Nasi Goreng Special\",
           \"qty\": 2,
-          \"price\": \"Rp 90.000\"
+          \"price\": \"Rp 90.000\",
+          \"note\": \"Pedas sedang\"
         },
         {
           \"prefix\": \"2.\",
           \"name\": \"Sate Ayam (10 tusuk)\",
           \"qty\": 1,
-          \"price\": \"Rp 35.000\"
+          \"price\": \"Rp 35.000\",
+          \"note\": \"Matang sempurna\"
         },
         {
           \"prefix\": \"3.\",
@@ -153,7 +155,8 @@ curl -X POST "$API_URL" \
           \"name\": \"Paket Nasi Box (50 pax)\",
           \"qty\": 50,
           \"unit_price\": \"Rp 35.000\",
-          \"amount\": \"Rp 1.750.000\"
+          \"amount\": \"Rp 1.750.000\",
+          \"note\": \"Ayam goreng, nasi putih, sayur\"
         },
         {
           \"no\": \"2\",

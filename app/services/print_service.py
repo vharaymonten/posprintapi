@@ -20,7 +20,9 @@ LEFT = ESC + b"a\x00"
 BOLD_ON = ESC + b"E\x01"
 BOLD_OFF = ESC + b"E\x00"
 DOUBLE_HEIGHT_ON = ESC + b"!\x10"
-DOUBLE_HEIGHT_OFF = ESC + b"!\x00"
+DOUBLE_WIDTH_ON = ESC + b"!\x20"
+DOUBLE_SIZE_ON = ESC + b"!\x30"  # Double height + width
+NORMAL_SIZE = ESC + b"!\x00"
 CUT = GS + b"V\x00"
 
 
@@ -64,7 +66,23 @@ class PrintService:
             template = self._env.get_template(name)
         except TemplateNotFound:
             raise ValueError(f"Template not found: {template_name}")
-        return template.render(**metadata)
+        
+        # Add ESC/POS commands to template context
+        template_context = {
+            **metadata,
+            'INIT': INIT.decode('latin-1'),
+            'CENTER': CENTER.decode('latin-1'),
+            'LEFT': LEFT.decode('latin-1'),
+            'BOLD_ON': BOLD_ON.decode('latin-1'),
+            'BOLD_OFF': BOLD_OFF.decode('latin-1'),
+            'DOUBLE_HEIGHT_ON': DOUBLE_HEIGHT_ON.decode('latin-1'),
+            'DOUBLE_WIDTH_ON': DOUBLE_WIDTH_ON.decode('latin-1'),
+            'DOUBLE_SIZE_ON': DOUBLE_SIZE_ON.decode('latin-1'),
+            'NORMAL_SIZE': NORMAL_SIZE.decode('latin-1'),
+            'CUT': CUT.decode('latin-1'),
+        }
+        
+        return template.render(**template_context)
 
     def send_to_printer(self, printer: Printer, content: str) -> bool:
         """Send rendered text content to the thermal printer as ESC/POS.
