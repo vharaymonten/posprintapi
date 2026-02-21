@@ -2,7 +2,7 @@
  Bar Order Template for 40-column thermal printers
  Beverage orders for bar/bartender
 #}
-{% set w = 48 %}
+{% set w = 40 %}
 
 {{ '='|center(w) }}
 {{ 'BAR ORDER'|center(w) }}
