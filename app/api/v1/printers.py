@@ -16,6 +16,7 @@ def list_printers() -> list[PrinterResponse]:
         PrinterResponse(
             id=p.id,
             name=p.name,
+            printer_code=p.printer_code,
             host=p.host,
             port=p.port,
             is_available=p.is_available,
@@ -31,6 +32,7 @@ def register_printer(data: PrinterCreate) -> PrinterResponse:
     return PrinterResponse(
         id=printer.id,
         name=printer.name,
+        printer_code=printer.printer_code,
         host=printer.host,
         port=printer.port,
         is_available=printer.is_available,
@@ -59,6 +61,7 @@ def get_printer(printer_id: str) -> PrinterResponse:
     return PrinterResponse(
         id=printer.id,
         name=printer.name,
+        printer_code=printer.printer_code,
         host=printer.host,
         port=printer.port,
         is_available=printer.is_available,

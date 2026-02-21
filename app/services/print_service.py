@@ -77,9 +77,11 @@ class PrintService:
         template_name: str,
         metadata: dict,
         printer_id: Optional[str] = None,
+        printer_code: Optional[str] = None,
     ) -> tuple[bool, str, Optional[str], Optional[str], Optional[str]]:
         """
         Render template and optionally send to printer.
+        Accepts either printer_id or printer_code. If both provided, printer_code takes precedence.
         Returns: (success, message, job_id, html_preview, printer_id)
         """
         job_id = str(uuid.uuid4())
@@ -88,16 +90,23 @@ class PrintService:
         except ValueError as e:
             return False, str(e), None, None, None
 
-        if not printer_id:
+        # Resolve printer by code or ID
+        printer = None
+        if printer_code:
+            printer = printer_service.get_by_code(printer_code)
+            if not printer:
+                return False, f"Printer not found with code: {printer_code}", job_id, rendered, None
+        elif printer_id:
+            printer = printer_service.get(printer_id)
+            if not printer:
+                return False, f"Printer not found: {printer_id}", job_id, rendered, None
+        
+        if not printer:
             return True, "Rendered successfully; no printer specified.", job_id, rendered, None
 
-        printer = printer_service.get(printer_id)
-        if not printer:
-            return False, f"Printer not found: {printer_id}", job_id, rendered, None
-
         if self.send_to_printer(printer, rendered):
-            return True, "Print job sent to printer.", job_id, None, printer_id
-        return False, "Failed to send data to printer.", job_id, rendered, printer_id
+            return True, "Print job sent to printer.", job_id, None, printer.id
+        return False, "Failed to send data to printer.", job_id, rendered, printer.id
 
 
 print_service = PrintService()

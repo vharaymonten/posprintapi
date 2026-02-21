@@ -17,6 +17,7 @@ def initiate_print(body: InitiatePrintRequest) -> InitiatePrintResponse:
         template_name=body.template_name,
         metadata=body.metadata,
         printer_id=body.printer_id,
+        printer_code=body.printer_code,
     )
     if not success and not html_preview:
         raise HTTPException(status_code=400, detail=message)

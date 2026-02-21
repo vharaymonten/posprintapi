@@ -6,6 +6,7 @@ class InitiatePrintRequest(BaseModel):
     template_name: str = Field(..., description="Name of the Jinja2 template to render (without .html)")
     metadata: dict[str, Any] = Field(default_factory=dict, description="Data to populate the template")
     printer_id: Optional[str] = Field(None, description="Target printer ID; if omitted, returns rendered HTML only")
+    printer_code: Optional[str] = Field(None, description="Target printer code (alternative to printer_id)")
 
 
 class InitiatePrintResponse(BaseModel):
