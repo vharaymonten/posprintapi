@@ -7,11 +7,7 @@ services:
     ports:
       - "9191:9191"
     restart: unless-stopped
-    environment:
-      # CORS Configuration - Comma-separated list of allowed origins
-      PRINTER_CORS_ORIGINS: "http://localhost:3000,http://localhost:8080,http://127.0.0.1:3000"
-      # Or use * to allow all origins (not recommended for production)
-      # PRINTER_CORS_ORIGINS: "*"
-    # Uncomment to use .env file
-    # env_file:
-    #   - .env
+    # Note: CORS is configured in app/core/config.py
+    # Edit cors_origins in that file to change allowed origins
+    # environment:
+    #   PRINTER_TEMPLATES_DIR: "/app/receipt_templates"

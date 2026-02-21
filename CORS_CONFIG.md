@@ -2,78 +2,60 @@
 
 The Printer API includes CORS (Cross-Origin Resource Sharing) middleware to control which domains can access the API.
 
-## Configuration Methods
+## Configuration Method
 
-### Method 1: Environment Variables (Recommended)
+CORS settings are configured directly in the code file: `app/core/config.py`
 
-Create a `.env` file in the project root:
-
-```bash
-# Allow specific origins
-PRINTER_CORS_ORIGINS=http://localhost:3000,http://localhost:8080,http://yourapp.com
-
-# Allow all origins (not recommended for production)
-PRINTER_CORS_ORIGINS=*
-```
-
-### Method 2: Docker Compose
-
-Edit `docker-compose.yml`:
-
-```yaml
-services:
-  printer-api:
-    environment:
-      PRINTER_CORS_ORIGINS: "http://localhost:3000,http://localhost:8080"
-```
-
-### Method 3: Direct Configuration
-
-Edit `app/core/config.py`:
+Edit the `cors_origins` list to add allowed origins:
 
 ```python
-cors_origins: List[str] = ["http://localhost:3000", "http://yourapp.com"]
+# app/core/config.py
+
+class Settings(BaseSettings):
+    # ... other settings ...
+    
+    # CORS Configuration
+    cors_origins: List[str] = ["*"]  # Change this to your allowed origins
+    cors_credentials: bool = True
+    cors_methods: List[str] = ["*"]
+    cors_headers: List[str] = ["*"]
 ```
 
 ## Default Configuration
 
 By default, the API allows **all origins** (`*`). This is convenient for development but should be restricted in production.
 
-## Configuration Options
+## Configuration Examples
 
-All CORS settings can be configured via environment variables with the `PRINTER_` prefix:
+### Allow All Origins (Development Only)
 
-| Variable | Type | Default | Description |
-|----------|------|---------|-------------|
-| `PRINTER_CORS_ORIGINS` | string (comma-separated) | `*` | Allowed origins |
-| `PRINTER_CORS_CREDENTIALS` | boolean | `true` | Allow credentials |
-| `PRINTER_CORS_METHODS` | string (comma-separated) | `*` | Allowed HTTP methods |
-| `PRINTER_CORS_HEADERS` | string (comma-separated) | `*` | Allowed headers |
-
-## Examples
+```python
+cors_origins: List[str] = ["*"]
+```
 
 ### Allow Single Origin
 
-```bash
-PRINTER_CORS_ORIGINS=http://localhost:3000
+```python
+cors_origins: List[str] = ["http://localhost:3000"]
 ```
 
 ### Allow Multiple Origins
 
-```bash
-PRINTER_CORS_ORIGINS=http://localhost:3000,https://myapp.com,https://admin.myapp.com
+```python
+cors_origins: List[str] = [
+    "http://localhost:3000",
+    "https://myapp.com",
+    "https://admin.myapp.com"
+]
 ```
 
-### Allow All Origins (Development Only)
+### Production Example
 
-```bash
-PRINTER_CORS_ORIGINS=*
-```
-
-### Restrict Methods
-
-```bash
-PRINTER_CORS_METHODS=GET,POST,OPTIONS
+```python
+cors_origins: List[str] = [
+    "https://pos.restaurant.com",
+    "https://admin.restaurant.com"
+]
 ```
 
 ## Testing CORS

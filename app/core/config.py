@@ -13,16 +13,21 @@ class Settings(BaseSettings):
     # Discovery: timeout in seconds when scanning for printers
     discovery_timeout_seconds: float = 1.0
     
-    # CORS Configuration
-    cors_origins: List[str] = ["*"]  # Allow all origins by default, configure as needed
+    # CORS Configuration - Configure in code, not via environment variables
+    cors_origins: List[str] = ["*"]  # Allow all origins by default
     cors_credentials: bool = True
     cors_methods: List[str] = ["*"]
     cors_headers: List[str] = ["*"]
 
     class Config:
         env_prefix = "PRINTER_"
-        # Allow PRINTER_CORS_ORIGINS="http://localhost:3000,http://localhost:8080"
-        env_file = ".env"
+        # Exclude CORS settings from environment variable parsing
+        fields = {
+            'cors_origins': {'exclude': True},
+            'cors_credentials': {'exclude': True},
+            'cors_methods': {'exclude': True},
+            'cors_headers': {'exclude': True},
+        }
 
 
 settings = Settings()
