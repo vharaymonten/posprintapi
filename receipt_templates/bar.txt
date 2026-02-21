@@ -16,9 +16,9 @@ Time     : {{ time }}
 {{ '-' * w }}
 
 {% for item in items %}
-{{ item.qty|string|rjust(3) }} x {{ DOUBLE_HEIGHT_ON }}{{ BOLD_ON }}{{ item.name|upper }}{{ BOLD_OFF }}{{ NORMAL_SIZE }}
+{{ ((item.qty|string) + ' x ' + item.name|upper)|center(w) }}
 {% if item.note %}
-      * {{ item.note }}
+{{ ('* ' + item.note)|center(w) }}
 {% endif %}
 
 {% endfor %}
