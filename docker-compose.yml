@@ -1,0 +1,12 @@
+version: "3.9"
+
+services:
+  printer-api:
+    build: .
+    container_name: printer-api
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    # Uncomment and adjust if you later add env vars
+    # environment:
+    #   PRINTER_TEMPLATES_DIR: "/app/app/templates"
