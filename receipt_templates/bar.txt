@@ -1,38 +1,27 @@
 {#
- Bar Order Template for 40-column thermal printers
- Beverage orders for bar/bartender
+ Jinja2 text template for kitchen printer (40-column).
+ Fields expected in context:
+   order_no, table_no, customer_name,
+   items: list of { name, qty },
+   kitchen_note (optional free text).
 #}
-{% set w = 40 %}
+{% set w = 44 %}
 
-{{ '='|center(w) }}
 {{ 'BAR ORDER'|center(w) }}
-{{ '='|center(w) }}
-
+{{ '-' * w }}
 Order No : {{ order_no }}
 Table No : {{ table_no }}
-Server   : {{ server_name|default('Bar') }}
-Time     : {{ time }}
-
+Customer : {{ customer_name }}
 {{ '-' * w }}
 
 {% for item in items %}
-{{ ((item.qty|string) + ' x ' + item.name|upper)|center(w) }}
+{{ DOUBLE_HEIGHT_ON }}{{ BOLD_ON }}{{ item.name|upper|truncate(w) }}{{ BOLD_OFF }}{{ NORMAL_SIZE }}
+Qty : {{ item.qty }}
 {% if item.note %}
-{{ ('* ' + item.note)|center(w) }}
+Note: {{ item.note|truncate(w - 6) }}
 {% endif %}
 
 {% endfor %}
-
 {{ '-' * w }}
 
-Total Drinks: {{ total_qty }}
-
-{% if special_note %}
-{{ '-' * w }}
-*** SPECIAL NOTE ***
-{{ special_note }}
-{{ '-' * w }}
-{% endif %}
-
-{{ time_ordered|default('')|center(w) }}
 
