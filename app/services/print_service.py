@@ -11,10 +11,16 @@ from app.models.printer import Printer
 from app.services.printer_service import printer_service
 
 
-# --- ESC/POS RAW COMMANDS (same as standalone script) ---
+# --- ESC/POS RAW COMMANDS ---
 ESC = b"\x1b"
 GS = b"\x1d"
 INIT = ESC + b"@"
+CENTER = ESC + b"a\x01"
+LEFT = ESC + b"a\x00"
+BOLD_ON = ESC + b"E\x01"
+BOLD_OFF = ESC + b"E\x00"
+DOUBLE_HEIGHT_ON = ESC + b"!\x10"
+DOUBLE_HEIGHT_OFF = ESC + b"!\x00"
 CUT = GS + b"V\x00"
 
 
@@ -66,15 +72,18 @@ class PrintService:
         The content is treated as plain text (already formatted by Jinja2),
         wrapped with printer INIT and CUT commands.
         """
-        buffer = INIT + content.encode("utf-8") + b"\n\n\n" + CUT
+        # Initialize printer and set to left alignment by default
+        buffer = INIT + LEFT + content.encode("utf-8", errors="ignore") + b"\n\n\n" + CUT
 
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.settimeout(10)
                 sock.connect((printer.host, printer.port))
                 sock.sendall(buffer)
+                print(f"[SUCCESS] Print sent to {printer.name} ({printer.host}:{printer.port})")
                 return True
-        except Exception:
+        except Exception as e:
+            print(f"[ERROR] Failed to print to {printer.name} ({printer.host}:{printer.port}): {e}")
             return False
 
     def initiate_print(
