@@ -5,7 +5,7 @@ services:
     build: .
     container_name: printer-api
     ports:
-      - "9191:8000"
+      - "9191:9191"
     restart: unless-stopped
     # Uncomment and adjust if you later add env vars
     # environment:

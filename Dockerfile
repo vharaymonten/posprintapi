@@ -25,7 +25,7 @@ COPY receipt_templates ./receipt_templates
 COPY printers.yaml ./printers.yaml
 
 # Expose the port the app will run on
-EXPOSE 8000
+EXPOSE 9191
 
 # Default command: run Uvicorn
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "9191"]
