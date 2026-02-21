@@ -54,7 +54,44 @@ API endpoint: `POST /api/v1/initiate-print`
 
 ---
 
-## 2. Receipt Template (`receipt.txt`)
+## 2. Checker Template (`checker.txt`)
+
+### Contract
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `order_no` | string | Yes | Order number/ID |
+| `table_no` | string | Yes | Table number |
+| `customer_name` | string | Yes | Customer name |
+| `items` | array | Yes | Array of order items |
+| `items[].name` | string | Yes | Item name (will be displayed in bold) |
+| `items[].qty` | integer | Yes | Item quantity |
+| `items[].note` | string | No | Special notes for this item |
+| `checker_note` | string | No | Special instructions for checker/waiter |
+
+### Example Request
+
+```json
+{
+  "template_name": "checker.txt",
+  "printer_code": "CHECKER",
+  "metadata": {
+    "order_no": "ORD-20260221-001",
+    "table_no": "7",
+    "customer_name": "Budi Santoso",
+    "items": [
+      {"name": "Nasi Goreng Special", "qty": 2, "note": "Pedas sedang, tanpa terasi"},
+      {"name": "Sate Ayam (10 tusuk)", "qty": 1},
+      {"name": "Es Teh Manis", "qty": 2}
+    ],
+    "checker_note": "Customer allergic to peanuts"
+  }
+}
+```
+
+---
+
+## 3. Receipt Template (`receipt.txt`)
 
 ### Contract
 
@@ -133,7 +170,7 @@ API endpoint: `POST /api/v1/initiate-print`
 
 ---
 
-## 3. CloseBill Template (`closebill.txt`)
+## 4. CloseBill Template (`closebill.txt`)
 
 ### Contract
 
@@ -223,7 +260,7 @@ API endpoint: `POST /api/v1/initiate-print`
 
 ---
 
-## 4. Invoice Template (`invoice.txt`)
+## 5. Invoice Template (`invoice.txt`)
 
 ### Contract
 
@@ -317,7 +354,7 @@ API endpoint: `POST /api/v1/initiate-print`
 
 ---
 
-## 5. Bar Template (`bar.txt`)
+## 6. Bar Template (`bar.txt`)
 
 ### Contract
 
