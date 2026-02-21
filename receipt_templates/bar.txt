@@ -1,0 +1,38 @@
+{#
+ Bar Order Template for 40-column thermal printers
+ Beverage orders for bar/bartender
+#}
+{% set w = 40 %}
+
+{{ '='|center(w) }}
+{{ 'BAR ORDER'|center(w) }}
+{{ '='|center(w) }}
+
+Order No : {{ order_no }}
+Table No : {{ table_no }}
+Server   : {{ server_name|default('Bar') }}
+Time     : {{ time }}
+
+{{ '-' * w }}
+
+{% for item in items %}
+{{ item.qty|string|rjust(3) }} x {{ item.name|upper }}
+{% if item.note %}
+      * {{ item.note }}
+{% endif %}
+
+{% endfor %}
+
+{{ '-' * w }}
+
+Total Drinks: {{ total_qty }}
+
+{% if special_note %}
+{{ '-' * w }}
+*** SPECIAL NOTE ***
+{{ special_note }}
+{{ '-' * w }}
+{% endif %}
+
+{{ time_ordered|default('')|center(w) }}
+

@@ -310,6 +310,60 @@ API endpoint: `POST /api/v1/initiate-print`
 
 ---
 
+## 5. Bar Template (`bar.txt`)
+
+### Contract
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `order_no` | string | Yes | Order number/ID |
+| `table_no` | string | Yes | Table number or location |
+| `server_name` | string | No | Server/waiter name (default: "Bar") |
+| `time` | string | Yes | Order time (HH:MM:SS) |
+| `items` | array | Yes | Array of drink items |
+| `items[].qty` | integer | Yes | Quantity of drinks |
+| `items[].name` | string | Yes | Drink/beverage name |
+| `items[].note` | string | No | Special preparation notes (e.g., "Extra lime", "No ice") |
+| `total_qty` | integer | Yes | Total quantity of all drinks |
+| `special_note` | string | No | Special instructions or priority notes |
+| `time_ordered` | string | No | Short time format for display (HH:MM) |
+
+### Example Request
+
+```json
+{
+  "template_name": "bar.txt",
+  "printer_code": "BAR",
+  "metadata": {
+    "order_no": "BAR-002",
+    "table_no": "7",
+    "server_name": "Bob",
+    "time": "21:30:00",
+    "items": [
+      {
+        "qty": 1,
+        "name": "Long Island Ice Tea",
+        "note": "Extra lime"
+      },
+      {
+        "qty": 2,
+        "name": "Whiskey Sour",
+        "note": "No ice"
+      },
+      {
+        "qty": 1,
+        "name": "Cosmopolitan"
+      }
+    ],
+    "total_qty": 4,
+    "special_note": "VIP Table - Priority Service",
+    "time_ordered": "21:30"
+  }
+}
+```
+
+---
+
 ## Response Format
 
 ### Success Response
