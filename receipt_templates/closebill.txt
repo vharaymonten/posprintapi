@@ -22,7 +22,7 @@ Table  : {{ table_no }}
 CLOSE BILL SUMMARY
 
 {% for item in items %}
-{{ item.prefix }} {{ DOUBLE_SIZE_ON }}{{ item.name|truncate(20) }}{{ NORMAL_SIZE }}
+{{ item.prefix }} {{ BOLD_ON }}{{ item.name|truncate(w - 7) }}{{ BOLD_OFF }}
 {{ (item.qty|string)|rjust(3) }} x {{ item.price|rjust(w - 7) }}
 {% if item.note %}
    Note: {{ item.note|truncate(w - 9) }}
