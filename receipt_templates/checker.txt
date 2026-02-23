@@ -15,7 +15,7 @@ Customer : {{ customer_name }}
 {{ '-' * w }}
 
 {% for item in items %}
-{{ DOUBLE_HEIGHT_ON }}{{ BOLD_ON }}{{ item.name|upper|truncate(w) }}{{ BOLD_OFF }}{{ NORMAL_SIZE }}
+{{ DOUBLE_SIZE_ON }}{{ BOLD_ON }}{{ item.name|upper|truncate(w) }}{{ BOLD_OFF }}{{ NORMAL_SIZE }}
 Qty : {{ item.qty }}
 {% if item.note %}
 Note: {{ item.note|truncate(w - 6) }}

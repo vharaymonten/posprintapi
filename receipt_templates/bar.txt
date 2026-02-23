@@ -1,13 +1,13 @@
 {#
- Jinja2 text template for kitchen printer (40-column).
+ Jinja2 text template for checker/waiter printer (40-column).
  Fields expected in context:
    order_no, table_no, customer_name,
-   items: list of { name, qty },
-   kitchen_note (optional free text).
+   items: list of { name, qty, note },
+   checker_note (optional free text).
 #}
-{% set w = 44 %}
+{% set w = 40 %}
 
-{{ 'BAR ORDER'|center(w) }}
+{{ 'CHECKER'|center(w) }}
 {{ '-' * w }}
 Order No : {{ order_no }}
 Table No : {{ table_no }}
@@ -15,7 +15,7 @@ Customer : {{ customer_name }}
 {{ '-' * w }}
 
 {% for item in items %}
-{{ DOUBLE_HEIGHT_ON }}{{ BOLD_ON }}{{ item.name|upper|truncate(w) }}{{ BOLD_OFF }}{{ NORMAL_SIZE }}
+{{ DOUBLE_SIZE_ON }}{{ BOLD_ON }}{{ item.name|upper|truncate(w) }}{{ BOLD_OFF }}{{ NORMAL_SIZE }}
 Qty : {{ item.qty }}
 {% if item.note %}
 Note: {{ item.note|truncate(w - 6) }}
@@ -23,5 +23,6 @@ Note: {{ item.note|truncate(w - 6) }}
 
 {% endfor %}
 {{ '-' * w }}
-
+--- Checker Note ---
+{{ checker_note }}
 
