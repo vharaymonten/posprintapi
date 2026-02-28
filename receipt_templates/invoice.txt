@@ -8,6 +8,14 @@
 {{ 'INVOICE'|center(w) }}
 {{ '=' * w }}
 
+NOTES:
+{% if notes %}
+{{ notes }}
+{% else %}
+Thank you for your order!
+{% endif %}
+{{ '-' * w }}
+
 {{ store_name|upper|center(w) }}
 {{ address_line_1|center(w) }}
 {{ address_line_2|center(w) }}
@@ -66,15 +74,6 @@ Payment Status: {{ payment_status }}
 {% endif %}
 {% if payment_method %}
 Payment Method: {{ payment_method }}
-{% endif %}
-
-{{ '-' * w }}
-
-NOTES:
-{% if notes %}
-{{ notes }}
-{% else %}
-Thank you for your business!
 {% endif %}
 
 {{ '-' * w }}

@@ -11,7 +11,7 @@
 
 {{ 'KITCHEN ORDER'|center(w) }}
 {% if cancel_order %}
-{{ DOUBLE_SIZE_ON }}{{ BOLD_ON }}{{ '** CANCELLATION **'|center(w) }}{{ BOLD_OFF }}{{ NORMAL_SIZE }}
+{{ DOUBLE_SIZE_ON }}{{ BOLD_ON }}{{ '** CANCELLATION **'|center(w // 2) }}{{ BOLD_OFF }}{{ NORMAL_SIZE }}
 {% endif %}
 {{ '-' * w }}
 Order No : {{ order_no }}
