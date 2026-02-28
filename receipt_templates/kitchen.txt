@@ -4,10 +4,15 @@
    order_no, table_no, customer_name,
    items: list of { name, qty },
    kitchen_note (optional free text).
+   cancel_order (optional, default 0): set to 1 to show CANCELLATION banner.
 #}
 {% set w = 40 %}
+{% set cancel_order = cancel_order | default(0) %}
 
 {{ 'KITCHEN ORDER'|center(w) }}
+{% if cancel_order %}
+{{ DOUBLE_SIZE_ON }}{{ BOLD_ON }}{{ '** CANCELLATION **'|center(w) }}{{ BOLD_OFF }}{{ NORMAL_SIZE }}
+{% endif %}
 {{ '-' * w }}
 Order No : {{ order_no }}
 Table No : {{ table_no }}
