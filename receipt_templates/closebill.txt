@@ -33,7 +33,7 @@ CLOSE BILL SUMMARY
 Subtotal{{ subtotal|rjust(w - 8) }}
 Tax{{ tax|rjust(w - 3) }}
 {% if discount %}
-Discount{{ discount|rjust(w - 8) }}
+Discount{% if discount_prct %} ({{ discount_prct }}%){% endif %}{{ discount|rjust(w - 8) }}
 {% endif %}
 {{ '=' * w }}
 TOTAL{{ total|rjust(w - 5) }}

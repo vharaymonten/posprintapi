@@ -59,7 +59,7 @@ ITEM DESCRIPTION
 
 Subtotal   {{ subtotal|rjust(w - 11) }}
 {% if discount %}
-Discount   {{ discount|rjust(w - 11) }}
+Discount{% if discount_prct %} ({{ discount_prct }}%){% endif %}   {{ discount|rjust(w - 11) }}
 {% endif %}
 Tax ({{ tax_rate|default('10') }}%){{ tax|rjust(w - 11) }}
 {% if service_charge %}
