@@ -30,6 +30,11 @@ printers:
     printer_code: "HOT_KITCHEN"
     host: "192.168.3.165"
     port: 9100
+
+  - name: "KITCHEN_CHECKER"
+    printer_code: "KITCHEN_CHECKER"
+    host: "192.168.3.164"
+    port: 9100
   
   - name: "Cashier Printer"
     printer_code: "CASHIER_2"
