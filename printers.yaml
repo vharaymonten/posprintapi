@@ -20,6 +20,16 @@ printers:
     printer_code: "KITCHEN_2"
     host: "192.168.3.165"
     port: 9100
+
+  - name: "COLD_KITCHEN"
+    printer_code: "COLD_KITCHEN"
+    host: "192.168.3.164"
+    port: 9100
+
+  - name: "HOT_KITCHEN"
+    printer_code: "HOT_KITCHEN"
+    host: "192.168.3.165"
+    port: 9100
   
   - name: "Cashier Printer"
     printer_code: "CASHIER_2"
