@@ -16,6 +16,7 @@ Email : {{ email }}
 
 {{ date }}{{ ' ' * (w - (date|length) - (time|length)) }}{{ time }}
 {{ invoice_no }}
+Customer : {{ customer_name }}
 {{ cashier_label|rjust(w) }}
 {{ '-' * w }}
 
