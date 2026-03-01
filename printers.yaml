@@ -25,6 +25,10 @@ printers:
     printer_code: "CASHIER_2"
     host: "192.168.3.166"
     port: 9100
+  - name: "Cashier Printer"
+    printer_code: "TABLE_CHECKER"
+    host: "192.168.3.166"
+    port: 9100
   
   # - name: "Receipt Printer"
   #   host: "192.168.1.52"
