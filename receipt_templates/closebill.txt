@@ -16,13 +16,11 @@ Email : {{ email }}
 {{ date }}{{ ' ' * (w - (date|length) - (time|length)) }}{{ time }}
 Bill No: {{ bill_no }}
 Table  : {{ table_no }}
-{{ cashier_label|rjust(w) }}
+{{ 'Bayar di kasir'|rjust(w) }}
 {{ '-' * w }}
 
-CLOSE BILL SUMMARY
-
 {% for item in items %}
-{{ item.prefix }} {{ BOLD_ON }}{{ item.name|truncate(w - 7) }}{{ BOLD_OFF }}
+{{ item.prefix }} {{ BOLD_ON }}{{ item.name|upper|truncate(w) }}{{ BOLD_OFF }}
 {{ (item.qty|string)|rjust(3) }} x {{ item.price|rjust(w - 7) }}
 {% if item.note %}
    Note: {{ item.note|truncate(w - 9) }}
@@ -30,14 +28,23 @@ CLOSE BILL SUMMARY
 {% endfor %}
 
 {{ '-' * w }}
-Subtotal{{ subtotal|rjust(w - 8) }}
+Sub Total{{ subtotal|rjust(w - 9) }}
+{% if service_charge_amount %}
+{{ ('Service Charge (' + (service_charge_prct|string) + '%)')|ljust(w - (service_charge_amount|length)) }}{{ service_charge_amount }}
+{% endif %}
 Tax{{ tax|rjust(w - 3) }}
 {% if discount %}
-Discount{% if discount_prct %} ({{ discount_prct }}%){% endif %}{{ discount|rjust(w - 8) }}
+{% if discount_prct %}
+{{ ('Discount (' + (discount_prct|string) + '%)')|ljust(w - (discount|length)) }}{{ discount }}
+{% else %}
+Discount{{ discount|rjust(w - 8) }}
 {% endif %}
-{{ '=' * w }}
-TOTAL{{ total|rjust(w - 5) }}
-{{ '=' * w }}
+{% endif %}
+{{ '-' * w }}
+Grand Total{{ total|rjust(w - 11) }}
+{{ '-' * w }}
+
+
 
 PAYMENT DETAILS
 {{ '-' * w }}
