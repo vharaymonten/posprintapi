@@ -35,7 +35,7 @@ Sub Total{{ subtotal|rjust(w - 9) }}
 {% if service_charge_amount %}
 {{ ('Service Charge (' + (service_charge_prct|string) + '%)')|ljust(w - (service_charge_amount|length)) }}{{ service_charge_amount }}
 {% endif %}
-Tax{{ tax|rjust(w - 3) }}
+PB1{{ tax|rjust(w - 3) }}
 {% if discount %}
 {% if discount_prct %}
 {{ ('Discount (' + (discount_prct|string) + '%)')|ljust(w - (discount|length)) }}{{ discount }}

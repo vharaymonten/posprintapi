@@ -61,7 +61,7 @@ Subtotal   {{ subtotal|rjust(w - 11) }}
 {% if discount %}
 Discount{% if discount_prct %} ({{ discount_prct }}%){% endif %}   {{ discount|rjust(w - 11) }}
 {% endif %}
-Tax ({{ tax_rate|default('10') }}%){{ tax|rjust(w - 11) }}
+PB1 ({{ tax_rate|default('10') }}%){{ PB1|rjust(w - 11) }}
 {% if service_charge %}
 Service    {{ service_charge|rjust(w - 11) }}
 {% endif %}
