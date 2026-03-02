@@ -18,6 +18,7 @@ Email : {{ email }}
 {{ invoice_no }}
 Customer : {{ customer_name }}
 {{ cashier_label|rjust(w) }}
+Input By : {{ input_by }}
 {{ '-' * w }}
 
 {% for item in items %}

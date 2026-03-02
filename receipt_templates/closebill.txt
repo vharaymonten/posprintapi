@@ -17,6 +17,8 @@ Email : {{ email }}
 Bill No: {{ bill_no }}
 Table  : {{ table_no }}
 Customer : {{ customer_name }}
+Cashier  : {{ cashier_name }}
+Input By : {{ input_by }}
 {{ 'Bayar di kasir'|rjust(w) }}
 {{ '-' * w }}
 

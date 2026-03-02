@@ -26,6 +26,8 @@ API endpoint: `POST /api/v1/initiate-print`
 | `order_no` | string | Yes | Order number/ID |
 | `table_no` | string | Yes | Table number |
 | `customer_name` | string | Yes | Customer name |
+| `cashier_name` | string | No | Cashier name printed on ticket |
+| `input_by` | string | No | Username/operator who input the order |
 | `items` | array | Yes | Array of order items |
 | `items[].name` | string | Yes | Item name (displayed in **bold + double-height**) |
 | `items[].qty` | integer | Yes | Item quantity |
@@ -41,6 +43,8 @@ API endpoint: `POST /api/v1/initiate-print`
   "metadata": {
     "order_no": "ORD-20260221-001",
     "table_no": "7",
+    "cashier_name": "Siti",
+    "input_by": "system",
     "customer_name": "Budi Santoso",
     "items": [
       {"name": "Nasi Goreng Special", "qty": 2, "note": "Pedas sedang, tanpa terasi"},
@@ -63,6 +67,8 @@ API endpoint: `POST /api/v1/initiate-print`
 | `order_no` | string | Yes | Order number/ID |
 | `table_no` | string | Yes | Table number |
 | `customer_name` | string | Yes | Customer name |
+| `cashier_name` | string | No | Cashier name printed on ticket |
+| `input_by` | string | No | Username/operator who input the order |
 | `items` | array | Yes | Array of order items |
 | `items[].name` | string | Yes | Item name (displayed in **bold + double-height**) |
 | `items[].qty` | integer | Yes | Item quantity |
@@ -78,6 +84,8 @@ API endpoint: `POST /api/v1/initiate-print`
   "metadata": {
     "order_no": "ORD-20260221-001",
     "table_no": "7",
+    "cashier_name": "Siti",
+    "input_by": "system",
     "customer_name": "Budi Santoso",
     "items": [
       {"name": "Nasi Goreng Special", "qty": 2, "note": "Pedas sedang, tanpa terasi"},
@@ -108,6 +116,7 @@ API endpoint: `POST /api/v1/initiate-print`
 | `date` | string | Yes | Transaction date (YYYY-MM-DD) |
 | `time` | string | Yes | Transaction time (HH:MM:SS) |
 | `invoice_no` | string | Yes | Invoice/receipt number |
+| `customer_name` | string | No | Customer name (printed on receipt) |
 | `cashier_label` | string | Yes | Cashier name (e.g., "Kasir: Alice") |
 | `items` | array | Yes | Array of purchased items |
 | `items[].prefix` | string | Yes | Item number prefix (e.g., "1.") |
@@ -187,7 +196,9 @@ API endpoint: `POST /api/v1/initiate-print`
 | `time` | string | Yes | Transaction time (HH:MM:SS) |
 | `bill_no` | string | Yes | Bill number |
 | `table_no` | string | Yes | Table number |
-| `cashier_label` | string | Yes | Cashier name (e.g., "Kasir: Alice") |
+| `customer_name` | string | No | Customer name (printed under table) |
+| `cashier_name` | string | No | Cashier name printed on close bill |
+| `input_by` | string | No | Username/operator who created the bill |
 | `items` | array | Yes | Array of purchased items |
 | `items[].prefix` | string | Yes | Item number prefix (e.g., "1.") |
 | `items[].name` | string | Yes | Item name (will be displayed in bold) |
@@ -195,8 +206,11 @@ API endpoint: `POST /api/v1/initiate-print`
 | `items[].price` | string | Yes | Item total price (formatted) |
 | `items[].note` | string | No | Special notes for this item |
 | `subtotal` | string | Yes | Subtotal before tax (formatted with Rp) |
+| `service_charge_amount` | string | No | Service charge amount (formatted with Rp) |
+| `service_charge_prct` | number | No | Service charge percentage (e.g., 5 or 5.0) |
 | `tax` | string | Yes | Tax amount (formatted with Rp) |
 | `discount` | string | No | Discount amount (formatted with Rp) |
+| `discount_prct` | number | No | Discount percentage (e.g., 10 or 10.0) |
 | `total` | string | Yes | Grand total (formatted with Rp) |
 | `payments` | array | Yes | Array of payment methods used |
 | `payments[].type` | string | Yes | Payment type (e.g., "Cash", "Card", "E-Wallet") |
@@ -225,7 +239,9 @@ API endpoint: `POST /api/v1/initiate-print`
     "time": "20:15:30",
     "bill_no": "BILL-2026-0221-0089",
     "table_no": "12",
-    "cashier_label": "Kasir: Siti",
+    "customer_name": "Budi Santoso",
+    "cashier_name": "Siti",
+    "input_by": "system",
     "items": [
       {
         "prefix": "1.",
@@ -242,9 +258,12 @@ API endpoint: `POST /api/v1/initiate-print`
       }
     ],
     "subtotal": "Rp 105.000",
+    "service_charge_amount": "Rp 5.250",
+    "service_charge_prct": 5,
     "tax": "Rp 10.500",
     "discount": "Rp 5.000",
-    "total": "Rp 110.500",
+    "discount_prct": 10,
+    "total": "Rp 115.750",
     "payments": [
       {"type": "Cash", "amount": "Rp 60.500"},
       {"type": "Card (Visa)", "amount": "Rp 50.000"}
@@ -281,6 +300,8 @@ API endpoint: `POST /api/v1/initiate-print`
 | `customer_name` | string | Yes | Customer/company name |
 | `customer_address` | string | No | Customer address |
 | `customer_phone` | string | No | Customer phone number |
+| `cashier_name` | string | No | Cashier name printed on invoice |
+| `input_by` | string | No | Username/operator who created the invoice |
 | `items` | array | Yes | Array of invoice line items |
 | `items[].no` | string | Yes | Item sequence number |
 | `items[].name` | string | Yes | Item/service description (will be displayed in bold) |
@@ -322,6 +343,8 @@ API endpoint: `POST /api/v1/initiate-print`
     "customer_name": "PT. Maju Bersama",
     "customer_address": "Jl. Thamrin No. 45, Jakarta",
     "customer_phone": "+62 21 3334444",
+    "cashier_name": "Siti",
+    "input_by": "system",
     "items": [
       {
         "no": "1",

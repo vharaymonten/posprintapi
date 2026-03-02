@@ -17,6 +17,8 @@
 Order No : {{ order_no }}
 Table No : {{ table_no }}
 Customer : {{ customer_name }}
+Cashier  : {{ cashier_name }}
+Input By : {{ input_by }}
 {{ '-' * w }}
 
 {% for item in items %}
