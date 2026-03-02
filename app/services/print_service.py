@@ -1,5 +1,6 @@
 import socket
 import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -67,6 +68,10 @@ class PrintService:
         except TemplateNotFound:
             raise ValueError(f"Template not found: {template_name}")
         
+        # Ensure a time field exists (HH:MM:SS) if not provided
+        if "time" not in metadata:
+            metadata = {**metadata, "time": datetime.now().strftime("%H:%M:%S")}
+
         # Add ESC/POS commands to template context
         template_context = {
             **metadata,
