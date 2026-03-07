@@ -1,0 +1,33 @@
+{#
+ Close Cashier Template for 40-column thermal printers
+ Daily cashier closing summary.
+#}
+{% set w = 40 %}
+
+{{ 'CLOSING KASIR'|center(w) }}
+{{ '-' * w }}
+Closing Kasir : {{ cashier_name }}
+No. Kasir    : {{ cashier_no }}
+Tgl. Closing : {{ close_date }}
+Jam. Closing : {{ close_time }}
+{{ '-' * w }}
+
+Total Penjualan Rp.: {{ sales_total|rjust(w - 20) }}
+Total DP Rp.       : {{ total_dp|default('0')|rjust(w - 20) }}
+Grand Total Rp.    : {{ grand_total|default(sales_total)|rjust(w - 20) }}
+
+{{ '>> Rincian Pembayaran <<'|center(w) }}
+Tunai Rp.    : {{ tunai|rjust(w - 14) }}
+Credit  Rp.: {{ credit|rjust(w - 16) }}
+Debit Rp.    : {{ debit|rjust(w - 14) }}
+QRIS Rp.     : {{ qris|rjust(w - 14) }}
+
+{{ '>> Saldo Kasir <<'|center(w) }}
+Modal POS Rp.       : {{ opening_balance|rjust(w - 20) }}
+Pembayaran Tunai Rp.: {{ tunai|rjust(w - 20) }}
+Kembali Tunai Rp.: {{ change|rjust(w - 20) }}
+Saldo Akhir Rp.     : {{ closing_balance|rjust(w - 20) }}
+
+{{ '-' * w }}
+Print By {{ printby }}
+{{ timestamp }}

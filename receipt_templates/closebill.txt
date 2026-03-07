@@ -46,10 +46,6 @@ Tax{{ tax|rjust(w - 3) }}
 {{ '-' * w }}
 Grand Total{{ total|rjust(w - 11) }}
 {{ '-' * w }}
-
-
-
-PAYMENT DETAILS
 {{ '-' * w }}
 {% for payment in payments %}
 {{ payment.type|ljust(20) }}{{ payment.amount|rjust(w - 20) }}
@@ -58,9 +54,6 @@ PAYMENT DETAILS
 Total Payment{{ total_payment|rjust(w - 13) }}
 Change{{ change|rjust(w - 6) }}
 {{ '-' * w }}
-
-Item : {{ total_items }}
-Qty  : {{ total_qty }}
 
 {{ tagline|center(w) }}
 Terimakasih Atas Kunjungan Anda
