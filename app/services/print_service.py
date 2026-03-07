@@ -68,10 +68,14 @@ class PrintService:
         except TemplateNotFound:
             raise ValueError(f"Template not found: {template_name}")
         
-        # Ensure a time field exists (HH:MM:SS, UTC+7) if not provided
+        # Ensure a time field and timestamp exist (UTC+7) if not provided
+        tz_utc_plus_7 = timezone(timedelta(hours=7))
+        now_utc7 = datetime.now(tz_utc_plus_7)
         if "time" not in metadata:
-            tz_utc_plus_7 = timezone(timedelta(hours=7))
-            metadata = {**metadata, "time": datetime.now(tz_utc_plus_7).strftime("%H:%M:%S")}
+            metadata = {**metadata, "time": now_utc7.strftime("%H:%M:%S")}
+        if "timestamp" not in metadata:
+            # Example format: 06-03-2026 04:46 PM
+            metadata = {**metadata, "timestamp": now_utc7.strftime("%d-%m-%Y %I:%M %p")}
 
         # Add ESC/POS commands to template context
         template_context = {
