@@ -32,10 +32,6 @@ Input By : {{ input_by }}
 
 {{ '-' * w }}
 Sub Total{{ subtotal|rjust(w - 9) }}
-{% if service_charge_amount %}
-{{ ('Service Charge (' + (service_charge_prct|string) + '%)')|ljust(w - (service_charge_amount|length)) }}{{ service_charge_amount }}
-{% endif %}
-PB1{{ tax|rjust(w - 3) }}
 {% if discount %}
 {% if discount_prct %}
 {{ ('Discount (' + (discount_prct|string) + '%)')|ljust(w - (discount|length)) }}{{ discount }}
@@ -43,6 +39,10 @@ PB1{{ tax|rjust(w - 3) }}
 Discount{{ discount|rjust(w - 8) }}
 {% endif %}
 {% endif %}
+{% if service_charge_amount %}
+{{ ('Service Charge (' + (service_charge_prct|string) + '%)')|ljust(w - (service_charge_amount|length)) }}{{ service_charge_amount }}
+{% endif %}
+Tax{{ tax|rjust(w - 3) }}
 {{ '-' * w }}
 Grand Total{{ total|rjust(w - 11) }}
 {{ '-' * w }}

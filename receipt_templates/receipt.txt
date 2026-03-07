@@ -31,7 +31,7 @@ Input By : {{ input_by }}
 
 {{ '-' * w }}
 Total{{ total|rjust(w - 5) }}
-PB1{{ tax|rjust(w - 3) }}
+Tax{{ tax|rjust(w - 3) }}
 Cash{{ cash|rjust(w - 4) }}
 Kembali{{ change|rjust(w - 7) }}
 Item : {{ total_items }}
