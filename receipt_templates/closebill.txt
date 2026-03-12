@@ -9,9 +9,7 @@
 {{ address_line_1|center(w) }}
 {{ address_line_2|center(w) }}
 {{ city_line|center(w) }}
-NPWP  : {{ npwp }}
 Telp  : {{ phone }}
-Email : {{ email }}
 
 {{ date }}{{ ' ' * (w - (date|length) - (time|length)) }}{{ time }}
 Bill No: {{ bill_no }}

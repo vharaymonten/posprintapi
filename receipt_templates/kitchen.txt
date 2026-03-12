@@ -26,7 +26,7 @@ Time     : {{ time }}
 {{ DOUBLE_SIZE_ON }}{{ BOLD_ON }}{{ item.name|upper|truncate(w) }}{{ BOLD_OFF }}{{ NORMAL_SIZE }}
 Qty : {{ item.qty }}
 {% if item.note %}
-Note: {{ item.note|truncate(w - 6) }}
+Note: {{ item.note|truncate(w - 6) }}{{ BOLD_ON }}
 {% endif %}
 
 {% endfor %}
