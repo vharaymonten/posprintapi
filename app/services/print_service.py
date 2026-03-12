@@ -1,11 +1,15 @@
 import socket
 import uuid
+import base64
+import json
+import re
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Optional
 
 import jinja2
 from jinja2 import TemplateNotFound
+from PIL import Image
 
 from app.core.config import settings
 from app.models.printer import Printer
@@ -29,8 +33,8 @@ CUT = GS + b"V\x00"
 
 class PrintService:
     def __init__(self) -> None:
-        base_dir = Path(__file__).resolve().parents[2]
-        receipt_templates_dir = base_dir / "receipt_templates"
+        self._base_dir = Path(__file__).resolve().parents[2]
+        receipt_templates_dir = self._base_dir / "receipt_templates"
 
         # Load from both the original app templates and the new
         # plain-text receipt templates directory.
@@ -50,6 +54,7 @@ class PrintService:
         self._env.filters['rjust'] = lambda s, width, fillchar=' ': str(s).rjust(width, fillchar)
         self._env.filters['ljust'] = lambda s, width, fillchar=' ': str(s).ljust(width, fillchar)
         self._env.filters['truncate'] = lambda s, length, end='...': str(s)[:length] if len(str(s)) <= length else str(s)[:length-len(end)] + end
+        self._env.globals["IMAGE"] = self._image_token
 
     def render_template(self, template_name: str, metadata: dict) -> str:
         """Render a Jinja2 template by name with the given metadata.
@@ -94,14 +99,116 @@ class PrintService:
         
         return template.render(**template_context)
 
-    def send_to_printer(self, printer: Printer, content: str) -> bool:
+    def _image_token(self, path: str, height_cm: float = 2.0, align: str = "center") -> str:
+        payload = base64.b64encode(
+            json.dumps(
+                {"path": path, "height_cm": height_cm, "align": align},
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).decode("ascii")
+        return f"[[[IMG:{payload}]]]"
+
+    def _build_image_bytes(self, path: str, height_cm: float, align: str) -> bytes:
+        align_normalized = (align or "center").strip().lower()
+        if align_normalized == "center":
+            align_bytes = CENTER
+        elif align_normalized == "left":
+            align_bytes = LEFT
+        else:
+            raise ValueError(f"Unsupported image align: {align}")
+
+        img_path = (self._base_dir / path).resolve()
+        if not img_path.exists():
+            raise ValueError(f"Image not found: {path}")
+
+        with Image.open(img_path) as img:
+            if img.mode in ("RGBA", "LA") or ("transparency" in img.info):
+                rgba = img.convert("RGBA")
+                bg = Image.new("RGBA", rgba.size, (255, 255, 255, 255))
+                img = Image.alpha_composite(bg, rgba).convert("RGB")
+            else:
+                img = img.convert("RGB")
+
+            img = img.convert("L")
+
+            dpi = 203
+            height_px = max(1, int(round((float(height_cm) / 2.54) * dpi)))
+
+            orig_w, orig_h = img.size
+            if orig_h <= 0 or orig_w <= 0:
+                raise ValueError(f"Invalid image size: {path}")
+
+            new_w = max(1, int(round(orig_w * (height_px / orig_h))))
+            new_h = height_px
+
+            max_width_dots = 384
+            if new_w > max_width_dots:
+                scale = max_width_dots / new_w
+                new_w = max(1, int(round(new_w * scale)))
+                new_h = max(1, int(round(new_h * scale)))
+
+            img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
+            bw = img.convert("1", dither=Image.Dither.FLOYDSTEINBERG)
+
+            width_bytes = (new_w + 7) // 8
+            padded_w = width_bytes * 8
+            if padded_w != new_w:
+                padded = Image.new("1", (padded_w, new_h), 1)
+                padded.paste(bw, (0, 0))
+                bw = padded
+
+            pixels = bw.load()
+            raster = bytearray()
+            for y in range(new_h):
+                for xb in range(width_bytes):
+                    b = 0
+                    for bit in range(8):
+                        x = xb * 8 + bit
+                        if pixels[x, y] == 0:
+                            b |= 1 << (7 - bit)
+                    raster.append(b)
+
+            xL = width_bytes & 0xFF
+            xH = (width_bytes >> 8) & 0xFF
+            yL = new_h & 0xFF
+            yH = (new_h >> 8) & 0xFF
+            image_cmd = GS + b"v0" + bytes([0, xL, xH, yL, yH]) + bytes(raster)
+            return align_bytes + image_cmd + b"\n" + LEFT
+
+    def _rendered_to_bytes(self, rendered: str) -> bytes:
+        pattern = re.compile(r"\[\[\[IMG:([A-Za-z0-9+/=]+)\]\]\]")
+        out = bytearray()
+        pos = 0
+        for match in pattern.finditer(rendered):
+            out.extend(rendered[pos:match.start()].encode("utf-8", errors="ignore"))
+            payload_b64 = match.group(1)
+            try:
+                payload_json = base64.b64decode(payload_b64).decode("utf-8")
+                payload = json.loads(payload_json)
+            except Exception as e:
+                raise ValueError(f"Invalid image token payload: {e}")
+
+            out.extend(
+                self._build_image_bytes(
+                    path=str(payload.get("path", "")),
+                    height_cm=float(payload.get("height_cm", 2.0)),
+                    align=str(payload.get("align", "center")),
+                )
+            )
+            pos = match.end()
+
+        out.extend(rendered[pos:].encode("utf-8", errors="ignore"))
+        return bytes(out)
+
+    def send_to_printer(self, printer: Printer, content: bytes) -> bool:
         """Send rendered text content to the thermal printer as ESC/POS.
 
         The content is treated as plain text (already formatted by Jinja2),
         wrapped with printer INIT and CUT commands.
         """
         # Initialize printer and set to left alignment by default
-        buffer = INIT + LEFT + content.encode("utf-8", errors="ignore") + b"\n\n\n" + CUT
+        buffer = INIT + LEFT + content + b"\n\n\n" + CUT
 
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -146,7 +253,12 @@ class PrintService:
         if not printer:
             return True, "Rendered successfully; no printer specified.", job_id, rendered, None
 
-        if self.send_to_printer(printer, rendered):
+        try:
+            rendered_bytes = self._rendered_to_bytes(rendered)
+        except ValueError as e:
+            return False, str(e), job_id, rendered, printer.id
+
+        if self.send_to_printer(printer, rendered_bytes):
             return True, "Print job sent to printer.", job_id, None, printer.id
         return False, "Failed to send data to printer.", job_id, rendered, printer.id
 
