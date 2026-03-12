@@ -3,7 +3,7 @@
  Payment summary with payment method breakdown
 #}
 {% set w = 40 %}
-
+{{ IMAGE('logo/logo.jpg', height_cm=2, align='center') }}
 {{ store_name|default('ANEKA Restoran')|upper|center(w) }}
 {{ '-'|center(w) }}
 {{ address_line_1|center(w) }}
@@ -55,4 +55,3 @@ Change{{ change|rjust(w - 6) }}
 
 {{ tagline|center(w) }}
 Terimakasih Atas Kunjungan Anda
-
