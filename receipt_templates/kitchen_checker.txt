@@ -20,9 +20,9 @@ Time     : {{ time }}
 {{ '-' * w }}
 {% for item in items %}
 {{ DOUBLE_SIZE_ON }}{{ BOLD_ON }}{{ item.name|upper|truncate(w) }}{{ BOLD_OFF }}{{ NORMAL_SIZE }}
-Qty : {{ item.qty }}
+{{ BOLD_ON }}Qty : {{ item.qty }}{{ BOLD_OFF }}
 {% if item.note %}
-Note: {{ item.note|truncate(w - 6) }}
+{{ BOLD_ON }}Note: {{ item.note }}{{ BOLD_OFF }}
 {% endif %}
 {% endfor %}
 {{ '-' * w }}

@@ -24,13 +24,12 @@ Time     : {{ time }}
 
 {% for item in items %}
 {{ item.name|upper|truncate(w) }}{{ BOLD_OFF }}{{ NORMAL_SIZE }}
-Qty : {{ item.qty }}
+{{ BOLD_ON }}Qty : {{ item.qty }}{{ BOLD_OFF }}
 {% if item.note %}
-Note: {{ item.note|truncate(w - 6) }}{{ BOLD_ON }}
+{{ BOLD_ON }}Note: {{ item.note }}{{ BOLD_OFF }}
 {% endif %}
 
 {% endfor %}
 {{ '-' * w }}
 --- Checker Note ---
 {{ checker_note }}
-
