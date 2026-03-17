@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     default_printer_port: int = 9100
     # Discovery: timeout in seconds when scanning for printers
     discovery_timeout_seconds: float = 1.0
+
+    sqlite_db_path: Path = Path(__file__).resolve().parent.parent.parent / "printers.sqlite3"
     
     # CORS Configuration - Configure in code, not via environment variables
     cors_origins: List[str] = ["*"]  # Allow all origins by default

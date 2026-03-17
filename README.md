@@ -45,7 +45,7 @@ API docs: **http://localhost:8000/docs**
       { "name": "Fries", "quantity": 2, "price": 3.50 }
     ],
     "subtotal": 19.99,
-    "tax": 1.60,
+    "Tax": 1.60,
     "total": 21.59,
     "thank_you_message": "Thank you!"
   },
@@ -75,7 +75,7 @@ Variables you can pass in `metadata`:
 | `server`           | Server name                |
 | `items`            | List of `{ name, quantity?, price?, notes? }` |
 | `subtotal`         | Subtotal                   |
-| `tax`              | Tax                        |
+| `Tax`              | Tax                        |
 | `discount`         | Discount                   |
 | `total`            | Total                      |
 | `thank_you_message`| Footer text                |

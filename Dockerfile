@@ -25,6 +25,10 @@ COPY receipt_templates ./receipt_templates
 COPY logo ./logo
 COPY printers.yaml ./printers.yaml
 
+# Persistent data directory (SQLite DB)
+RUN mkdir -p /data
+ENV PRINTER_SQLITE_DB_PATH=/data/printers.sqlite3
+
 # Expose the port the app will run on
 EXPOSE 9191
 

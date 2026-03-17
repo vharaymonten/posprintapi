@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
-from app.schemas.printer import PrinterCreate, PrinterResponse, PrinterDiscoveryResult
+from app.schemas.printer import PrinterCreate, PrinterResponse, PrinterDiscoveryResult, PrinterUpdate
 from app.services.printer_service import printer_service
 
 router = APIRouter()
@@ -28,7 +28,10 @@ def list_printers() -> list[PrinterResponse]:
 @router.post("", response_model=PrinterResponse, status_code=201)
 def register_printer(data: PrinterCreate) -> PrinterResponse:
     """Register a new printer by host and port."""
-    printer = printer_service.register(data)
+    try:
+        printer = printer_service.register(data)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
     return PrinterResponse(
         id=printer.id,
         name=printer.name,
@@ -66,6 +69,57 @@ def get_printer(printer_id: str) -> PrinterResponse:
         port=printer.port,
         is_available=printer.is_available,
     )
+
+
+@router.patch("/{printer_id}", response_model=PrinterResponse)
+def update_printer(printer_id: str, data: PrinterUpdate) -> PrinterResponse:
+    """Update a registered printer."""
+    try:
+        printer = printer_service.update(
+            printer_id,
+            name=data.name,
+            printer_code=data.printer_code,
+            host=data.host,
+            port=data.port,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    if not printer:
+        raise HTTPException(status_code=404, detail="Printer not found")
+    return PrinterResponse(
+        id=printer.id,
+        name=printer.name,
+        printer_code=printer.printer_code,
+        host=printer.host,
+        port=printer.port,
+        is_available=printer.is_available,
+    )
+
+
+@router.put("/{printer_id}", response_model=PrinterResponse)
+def replace_printer(printer_id: str, data: PrinterCreate) -> PrinterResponse:
+    """Replace a registered printer."""
+    try:
+        printer = printer_service.update(
+            printer_id,
+            name=data.name,
+            printer_code=data.printer_code,
+            host=data.host,
+            port=data.port,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    if not printer:
+        raise HTTPException(status_code=404, detail="Printer not found")
+    return PrinterResponse(
+        id=printer.id,
+        name=printer.name,
+        printer_code=printer.printer_code,
+        host=printer.host,
+        port=printer.port,
+        is_available=printer.is_available,
+    )
+
 
 
 @router.delete("/{printer_id}", status_code=204)

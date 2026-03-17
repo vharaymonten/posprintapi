@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Printers</title>
+    <style>
+      :root {
+        --bg: #0b1220;
+        --panel: #0f1a2f;
+        --border: #21304f;
+        --text: #e6ecff;
+        --muted: #a9b7e6;
+        --primary: #4f7cff;
+        --danger: #ff4d6d;
+        --ok: #20c997;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        background: radial-gradient(1200px 800px at 10% 0%, #122141, var(--bg));
+        color: var(--text);
+      }
+      a { color: inherit; }
+
+      .container {
+        max-width: 1100px;
+        margin: 24px auto;
+        padding: 0 16px;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      h1 {
+        font-size: 20px;
+        margin: 0;
+        letter-spacing: 0.2px;
+      }
+
+      .hint {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 380px 1fr;
+        gap: 16px;
+      }
+
+      @media (max-width: 920px) {
+        .grid { grid-template-columns: 1fr; }
+      }
+
+      .card {
+        background: rgba(15, 26, 47, 0.85);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px;
+        backdrop-filter: blur(10px);
+      }
+
+      .card h2 {
+        font-size: 14px;
+        margin: 0 0 10px 0;
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      label {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin: 10px 0 6px;
+      }
+
+      input {
+        width: 100%;
+        padding: 10px 10px;
+        background: #0b1326;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--text);
+        outline: none;
+      }
+      input:focus { border-color: rgba(79, 124, 255, 0.8); }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      button {
+        border: 1px solid transparent;
+        border-radius: 10px;
+        padding: 10px 12px;
+        background: #16284d;
+        color: var(--text);
+        cursor: pointer;
+        font-weight: 600;
+      }
+      button.primary { background: rgba(79, 124, 255, 0.22); border-color: rgba(79, 124, 255, 0.45); }
+      button.ghost { background: transparent; border-color: var(--border); color: var(--muted); }
+      button.danger { background: rgba(255, 77, 109, 0.16); border-color: rgba(255, 77, 109, 0.45); }
+      button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      .status {
+        margin-top: 10px;
+        font-size: 13px;
+        color: var(--muted);
+        min-height: 18px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      thead th {
+        text-align: left;
+        font-size: 12px;
+        color: var(--muted);
+        padding: 10px 8px;
+        border-bottom: 1px solid var(--border);
+      }
+      tbody td {
+        padding: 10px 8px;
+        border-bottom: 1px solid rgba(33, 48, 79, 0.6);
+        font-size: 14px;
+        vertical-align: top;
+      }
+      .badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .badge.ok {
+        color: rgba(32, 201, 151, 0.95);
+        border-color: rgba(32, 201, 151, 0.45);
+        background: rgba(32, 201, 151, 0.12);
+      }
+      .badge.bad {
+        color: rgba(255, 77, 109, 0.95);
+        border-color: rgba(255, 77, 109, 0.45);
+        background: rgba(255, 77, 109, 0.12);
+      }
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      }
+      .small { font-size: 12px; color: var(--muted); }
+      .table-actions { display: flex; gap: 8px; }
+      .table-actions button { padding: 8px 10px; border-radius: 10px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div>
+          <h1>Printers CRUD</h1>
+          <div class="hint">No authentication. Uses the JSON API at <span class="mono">/api/v1/printers</span>.</div>
+        </div>
+        <div class="actions" style="margin:0">
+          <button class="ghost" id="refreshBtn" type="button">Refresh</button>
+        </div>
+      </header>
+
+      <div class="grid">
+        <div class="card">
+          <h2 id="formTitle">Create Printer</h2>
+          <form id="printerForm">
+            <input type="hidden" id="editId" />
+
+            <label for="name">Name</label>
+            <input id="name" name="name" placeholder="e.g. BAR" required />
+
+            <label for="printer_code">Printer Code</label>
+            <input id="printer_code" name="printer_code" placeholder="e.g. KITCHEN_1 (optional)" />
+
+            <label for="host">Host / IP</label>
+            <input id="host" name="host" placeholder="e.g. 192.168.3.162" required />
+
+            <div class="row">
+              <div>
+                <label for="port">Port</label>
+                <input id="port" name="port" type="number" min="1" max="65535" value="9100" required />
+              </div>
+              <div>
+                <label for="apiBase">API Base</label>
+                <input id="apiBase" name="apiBase" value="/api/v1" />
+              </div>
+            </div>
+
+            <div class="actions">
+              <button class="primary" id="submitBtn" type="submit">Create</button>
+              <button class="ghost" id="cancelBtn" type="button" disabled>Cancel</button>
+            </div>
+          </form>
+          <div class="status" id="status"></div>
+        </div>
+
+        <div class="card">
+          <h2>Registered Printers</h2>
+          <div class="small" style="margin-bottom: 10px;">
+            Click Edit to populate the form, then Update.
+          </div>
+          <div style="overflow:auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Code</th>
+                  <th>Host</th>
+                  <th>Port</th>
+                  <th>Status</th>
+                  <th style="width: 260px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const els = {
+        apiBase: document.getElementById("apiBase"),
+        refreshBtn: document.getElementById("refreshBtn"),
+        rows: document.getElementById("rows"),
+        form: document.getElementById("printerForm"),
+        formTitle: document.getElementById("formTitle"),
+        submitBtn: document.getElementById("submitBtn"),
+        cancelBtn: document.getElementById("cancelBtn"),
+        status: document.getElementById("status"),
+        editId: document.getElementById("editId"),
+        name: document.getElementById("name"),
+        printer_code: document.getElementById("printer_code"),
+        host: document.getElementById("host"),
+        port: document.getElementById("port"),
+      };
+
+      function apiUrl(path) {
+        const base = (els.apiBase.value || "/api/v1").replace(/\/+$/, "");
+        return `${base}${path}`;
+      }
+
+      function setStatus(text, kind) {
+        els.status.textContent = text || "";
+        if (kind === "ok") els.status.style.color = "var(--ok)";
+        else if (kind === "error") els.status.style.color = "var(--danger)";
+        else els.status.style.color = "var(--muted)";
+      }
+
+      function enterEditMode(p) {
+        els.editId.value = p.id;
+        els.name.value = p.name || "";
+        els.printer_code.value = p.printer_code || "";
+        els.host.value = p.host || "";
+        els.port.value = p.port || 9100;
+        els.formTitle.textContent = "Update Printer";
+        els.submitBtn.textContent = "Update";
+        els.cancelBtn.disabled = false;
+      }
+
+      function exitEditMode() {
+        els.editId.value = "";
+        els.form.reset();
+        els.port.value = 9100;
+        els.apiBase.value = els.apiBase.value || "/api/v1";
+        els.formTitle.textContent = "Create Printer";
+        els.submitBtn.textContent = "Create";
+        els.cancelBtn.disabled = true;
+      }
+
+      function escapeHtml(s) {
+        return String(s ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      async function loadPrinters() {
+        setStatus("Loading...", "info");
+        els.rows.innerHTML = "";
+        try {
+          const res = await fetch(apiUrl("/printers"));
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+
+          if (!Array.isArray(data) || data.length === 0) {
+            els.rows.innerHTML = `<tr><td colspan="6" class="small">No printers found.</td></tr>`;
+            setStatus("Ready", "info");
+            return;
+          }
+
+          els.rows.innerHTML = data
+            .map((p) => {
+              const code = p.printer_code ? `<span class="badge mono">${escapeHtml(p.printer_code)}</span>` : `<span class="small">—</span>`;
+              const ready = p.is_available === true;
+              const status = ready
+                ? `<span class="badge ok">READY</span>`
+                : `<span class="badge bad">NOT AVAILABLE</span>`;
+              const testDisabled = ready ? "" : "disabled";
+              const testTitle = ready ? "title=\"Send a test print\"" : "title=\"Printer not reachable\"";
+              return `
+                <tr>
+                  <td>${escapeHtml(p.name)}</td>
+                  <td>${code}</td>
+                  <td class="mono">${escapeHtml(p.host)}</td>
+                  <td class="mono">${escapeHtml(p.port)}</td>
+                  <td>${status}</td>
+                  <td>
+                    <div class="table-actions">
+                      <button type="button" class="ghost" data-action="edit" data-id="${escapeHtml(p.id)}">Edit</button>
+                      <button type="button" class="primary" data-action="test" data-id="${escapeHtml(p.id)}" ${testTitle} ${testDisabled}>Test Print</button>
+                      <button type="button" class="danger" data-action="delete" data-id="${escapeHtml(p.id)}">Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              `;
+            })
+            .join("");
+
+          els.rows.querySelectorAll("button[data-action]").forEach((btn) => {
+            btn.addEventListener("click", async () => {
+              const id = btn.getAttribute("data-id");
+              const action = btn.getAttribute("data-action");
+              if (!id) return;
+
+              if (action === "edit") {
+                const p = data.find((x) => x.id === id);
+                if (p) enterEditMode(p);
+              } else if (action === "test") {
+                const p = data.find((x) => x.id === id);
+                if (p) await testPrint(p);
+              } else if (action === "delete") {
+                const ok = confirm("Delete this printer?");
+                if (!ok) return;
+                await deletePrinter(id);
+              }
+            });
+          });
+
+          setStatus("Ready", "ok");
+        } catch (e) {
+          setStatus(`Failed to load: ${e}`, "error");
+        }
+      }
+
+      async function createPrinter(payload) {
+        const res = await fetch(apiUrl("/printers"), {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(`${res.status} ${txt}`);
+        }
+        return res.json();
+      }
+
+      async function updatePrinter(id, payload) {
+        const res = await fetch(apiUrl(`/printers/${encodeURIComponent(id)}`), {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(`${res.status} ${txt}`);
+        }
+        return res.json();
+      }
+
+      async function deletePrinter(id) {
+        setStatus("Deleting...", "info");
+        try {
+          const res = await fetch(apiUrl(`/printers/${encodeURIComponent(id)}`), { method: "DELETE" });
+          if (!res.ok && res.status !== 204) {
+            const txt = await res.text();
+            throw new Error(`${res.status} ${txt}`);
+          }
+          if (els.editId.value === id) exitEditMode();
+          await loadPrinters();
+          setStatus("Deleted", "ok");
+        } catch (e) {
+          setStatus(`Delete failed: ${e}`, "error");
+        }
+      }
+
+      async function testPrint(printer) {
+        const ok = confirm(`Send test print to ${printer.name} (${printer.host}:${printer.port})?`);
+        if (!ok) return;
+
+        setStatus("Sending test print...", "info");
+        const now = new Date();
+        const payload = {
+          template_name: "kitchen.txt",
+          printer_id: printer.id,
+          metadata: {
+            order_no: `TEST-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`,
+            table_no: "UI",
+            customer_name: "TEST CUSTOMER",
+            cashier_name: "SYSTEM",
+            input_by: "UI",
+            items: [
+              { name: "TEST ITEM A", qty: 1, note: "" },
+              { name: "TEST ITEM B", qty: 2, note: "No spicy" },
+            ],
+            kitchen_note: "Test print from /ui/printers",
+          },
+        };
+
+        try {
+          const res = await fetch(apiUrl("/initiate-print"), {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const bodyText = await res.text();
+          if (!res.ok) throw new Error(`${res.status} ${bodyText}`);
+          const parsed = JSON.parse(bodyText);
+          setStatus(parsed.message || "Test print sent", parsed.success ? "ok" : "error");
+        } catch (e) {
+          setStatus(`Test print failed: ${e}`, "error");
+        }
+      }
+
+      els.form.addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        setStatus("Saving...", "info");
+
+        const payload = {
+          name: els.name.value.trim(),
+          printer_code: els.printer_code.value.trim() || null,
+          host: els.host.value.trim(),
+          port: Number(els.port.value || 9100),
+        };
+
+        try {
+          const id = (els.editId.value || "").trim();
+          if (id) {
+            await updatePrinter(id, payload);
+            setStatus("Updated", "ok");
+          } else {
+            await createPrinter(payload);
+            setStatus("Created", "ok");
+          }
+          exitEditMode();
+          await loadPrinters();
+        } catch (e) {
+          setStatus(`Save failed: ${e}`, "error");
+        }
+      });
+
+      els.cancelBtn.addEventListener("click", () => {
+        exitEditMode();
+        setStatus("Canceled", "info");
+      });
+
+      els.refreshBtn.addEventListener("click", () => {
+        loadPrinters();
+      });
+
+      loadPrinters();
+    </script>
+  </body>
+</html>
