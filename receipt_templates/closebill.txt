@@ -14,6 +14,7 @@ Telp  : {{ phone }}
 {{ date }}{{ ' ' * (w - (date|length) - (time|length)) }}{{ time }}
 Bill No: {{ bill_no }}
 Table  : {{ table_no }}
+Pax : {{ pax_count }}
 Customer : {{ customer_name }}
 Cashier  : {{ cashier_name }}
 Input By : {{ input_by }}
