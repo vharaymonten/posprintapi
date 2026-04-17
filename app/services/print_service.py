@@ -76,6 +76,8 @@ class PrintService:
         # Ensure a time field and timestamp exist (UTC+7) if not provided
         tz_utc_plus_7 = timezone(timedelta(hours=7))
         now_utc7 = datetime.now(tz_utc_plus_7)
+        if "date" not in metadata:
+            metadata = {**metadata, "date": now_utc7.strftime("%Y-%m-%d")}
         if "time" not in metadata:
             metadata = {**metadata, "time": now_utc7.strftime("%H:%M:%S")}
         if "timestamp" not in metadata:

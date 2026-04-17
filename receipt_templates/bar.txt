@@ -19,6 +19,7 @@ Table No : {{ table_no }}
 Customer : {{ customer_name }}
 Cashier  : {{ cashier_name }}
 Input By : {{ input_by }}
+Date     : {{ date }}
 Time     : {{ time }}
 {{ '-' * w }}
 

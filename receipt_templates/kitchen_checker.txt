@@ -16,6 +16,7 @@
 Order No : {{ order_no }}
 Table No : {{ table_no }}
 Customer : {{ customer_name }}
+Date     : {{ date }}
 Time     : {{ time }}
 {{ '-' * w }}
 {% for item in items %}
