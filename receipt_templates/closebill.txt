@@ -1,31 +1,39 @@
 {#
  Close Bill Template for 40-column thermal printers
  Payment summary with payment method breakdown
+
+ Optional fields:
+   reprint_count  — integer > 0 to show bold REPRINT banner
 #}
 {% set w = 40 %}
 {{ IMAGE('logo/logo.jpg', height_cm=2, align='center') }}
 {{ store_name|default('ANEKA Restoran')|upper|center(w) }}
-{{ '-'|center(w) }}
 {{ address_line_1|center(w) }}
-{{ address_line_2|center(w) }}
+{% if address_line_2 %}{{ address_line_2|center(w) }}
+{% endif %}
 {{ city_line|center(w) }}
 Telp  : {{ phone }}
-
+{{ '-' * w }}
+{% if reprint_count is defined and reprint_count %}
+{{ BOLD_ON }}{{ ('REPRINT ' + (reprint_count|string))|upper|center(w) }}{{ BOLD_OFF }}
+{{ '-' * w }}
+{% endif %}
 {{ date }}{{ ' ' * (w - (date|length) - (time|length)) }}{{ time }}
-Bill No: {{ bill_no }}
-Table  : {{ table_no }}
-Pax : {{ pax_count }}
+Bill No  : {{ bill_no }}
+Table    : {{ table_no }}
+Pax      : {{ pax_count }}
 Customer : {{ customer_name }}
 Cashier  : {{ cashier_name }}
 Input By : {{ input_by }}
-{{ 'Bayar di kasir'|rjust(w) }}
 {{ '-' * w }}
 
 {% for item in items %}
-{{ item.prefix }} {{ BOLD_ON }}{{ item.name|upper|truncate(w) }}{{ BOLD_OFF }}
+{{ BOLD_ON }}{{ item.name|upper|truncate(w) }}{{ BOLD_OFF }}
 {{ (item.qty|string)|rjust(3) }} x {{ item.price|rjust(w - 7) }}
+{% if item.note %}
+   Note: {{ item.note|truncate(w - 9) }}
+{% endif %}
 {% endfor %}
-
 {{ '-' * w }}
 Sub Total{{ subtotal|rjust(w - 9) }}
 {% if discount %}
@@ -36,12 +44,12 @@ Discount{{ discount|rjust(w - 8) }}
 {% endif %}
 {% endif %}
 {% if service_charge_amount %}
-{{ ('Service Charge (' + (service_charge_prct|string) + '%)')|ljust(w - (service_charge_amount|length)) }}{{ service_charge_amount }}
+SC{{ service_charge_amount|rjust(w - 2) }}
 {% endif %}
-Tax{{ tax|rjust(w - 3) }}
+PB1{{ tax|rjust(w - 3) }}
 {{ '-' * w }}
-Grand Total{{ total|rjust(w - 11) }}
-{{ '-' * w }}
+{{ BOLD_ON }}Grand Total{{ total|rjust(w - 11) }}{{ BOLD_OFF }}
+{% if payments %}
 {{ '-' * w }}
 {% for payment in payments %}
 {{ payment.type|ljust(20) }}{{ payment.amount|rjust(w - 20) }}
@@ -50,6 +58,7 @@ Grand Total{{ total|rjust(w - 11) }}
 Total Payment{{ total_payment|rjust(w - 13) }}
 Change{{ change|rjust(w - 6) }}
 {{ '-' * w }}
+{% endif %}
 
 {{ tagline|center(w) }}
 Terimakasih Atas Kunjungan Anda

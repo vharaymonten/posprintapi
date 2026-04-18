@@ -33,6 +33,8 @@ API endpoint: `POST /api/v1/initiate-print`
 | `items[].qty` | integer | Yes | Item quantity |
 | `items[].note` | string | No | Special notes for this item |
 | `kitchen_note` | string | No | Special instructions for kitchen |
+| `cancel_order` | integer | No | Set to `1` to print bold **CANCELLATION** banner |
+| `reprint_count` | integer | No | Reprint sequence number; when > 0 a bold **REPRINT N** banner is printed |
 
 ### Example Request
 
@@ -51,7 +53,8 @@ API endpoint: `POST /api/v1/initiate-print`
       {"name": "Sate Ayam (10 tusuk)", "qty": 1},
       {"name": "Es Teh Manis", "qty": 2}
     ],
-    "kitchen_note": "Nasi goreng: pedas sedang\nSate: matang sempurna"
+    "kitchen_note": "Nasi goreng: pedas sedang\nSate: matang sempurna",
+    "reprint_count": 2
   }
 }
 ```
@@ -74,6 +77,8 @@ API endpoint: `POST /api/v1/initiate-print`
 | `items[].qty` | integer | Yes | Item quantity |
 | `items[].note` | string | No | Special notes for this item |
 | `checker_note` | string | No | Special instructions for checker/waiter |
+| `cancel_order` | integer | No | Set to `1` to print bold **CANCELLATION** banner |
+| `reprint_count` | integer | No | Reprint sequence number; when > 0 a bold **REPRINT N** banner is printed |
 
 ### Example Request
 
@@ -92,7 +97,92 @@ API endpoint: `POST /api/v1/initiate-print`
       {"name": "Sate Ayam (10 tusuk)", "qty": 1},
       {"name": "Es Teh Manis", "qty": 2}
     ],
-    "checker_note": "Customer allergic to peanuts"
+    "checker_note": "Customer allergic to peanuts",
+    "reprint_count": 2
+  }
+}
+```
+
+---
+
+## 2b. Table Checker Template (`table_checker.txt`)
+
+### Contract
+
+| Field | Type | Required | Description |
+|-------|------|----------|--------------|
+| `order_no` | string | Yes | Order number/ID |
+| `table_no` | string | Yes | Table number |
+| `pax_count` | integer | No | Number of guests |
+| `customer_name` | string | Yes | Customer name |
+| `cashier_name` | string | No | Cashier name printed on ticket |
+| `input_by` | string | No | Username/operator who input the order |
+| `items` | array | Yes | Array of order items |
+| `items[].name` | string | Yes | Item name (displayed in **bold + double-size**) |
+| `items[].qty` | integer | Yes | Item quantity |
+| `items[].note` | string | No | Special notes for this item |
+| `checker_note` | string | No | Special instructions for checker/waiter |
+| `cancel_order` | integer | No | Set to `1` to print bold **CANCELLATION** banner |
+| `reprint_count` | integer | No | Reprint sequence number; when > 0 a bold **REPRINT N** banner is printed |
+
+### Example Request
+
+```json
+{
+  "template_name": "table_checker.txt",
+  "printer_code": "CHECKER",
+  "metadata": {
+    "order_no": "ORD-20260221-001",
+    "table_no": "7",
+    "pax_count": 4,
+    "cashier_name": "Siti",
+    "input_by": "system",
+    "customer_name": "Budi Santoso",
+    "items": [
+      {"name": "Nasi Goreng Special", "qty": 2, "note": "Pedas sedang"},
+      {"name": "Es Teh Manis", "qty": 2}
+    ],
+    "checker_note": "",
+    "reprint_count": 1
+  }
+}
+```
+
+---
+
+## 2c. Kitchen Checker Template (`kitchen_checker.txt`)
+
+### Contract
+
+| Field | Type | Required | Description |
+|-------|------|----------|--------------|
+| `order_no` | string | Yes | Order number/ID |
+| `table_no` | string | Yes | Table number |
+| `customer_name` | string | Yes | Customer name |
+| `items` | array | Yes | Array of order items |
+| `items[].name` | string | Yes | Item name (displayed in **bold + double-size**) |
+| `items[].qty` | integer | Yes | Item quantity |
+| `items[].note` | string | No | Special notes for this item |
+| `kitchen_note` | string | No | Special instructions for kitchen |
+| `cancel_order` | integer | No | Set to `1` to print bold **CANCELLATION** banner |
+| `reprint_count` | integer | No | Reprint sequence number; when > 0 a bold **REPRINT N** banner is printed |
+
+### Example Request
+
+```json
+{
+  "template_name": "kitchen_checker.txt",
+  "printer_code": "KITCHEN",
+  "metadata": {
+    "order_no": "ORD-20260221-001",
+    "table_no": "7",
+    "customer_name": "Budi Santoso",
+    "items": [
+      {"name": "Nasi Goreng Special", "qty": 2, "note": "Pedas sedang"},
+      {"name": "Sate Ayam", "qty": 1}
+    ],
+    "kitchen_note": "Matang sempurna",
+    "reprint_count": 1
   }
 }
 ```
@@ -131,6 +221,7 @@ API endpoint: `POST /api/v1/initiate-print`
 | `total_items` | integer | Yes | Total number of item types |
 | `total_qty` | integer | Yes | Total quantity of all items |
 | `points` | integer | Yes | Loyalty points earned |
+| `reprint_count` | integer | No | Reprint sequence number; when > 0 a bold **REPRINT N** banner is printed after the header |
 
 ### Example Request
 
@@ -151,6 +242,7 @@ API endpoint: `POST /api/v1/initiate-print`
     "time": "15:45:30",
     "invoice_no": "INV-2026-0221-0123",
     "cashier_label": "Kasir: Siti",
+    "reprint_count": 2,
     "items": [
       {
         "prefix": "1.",
@@ -200,15 +292,15 @@ API endpoint: `POST /api/v1/initiate-print`
 | `cashier_name` | string | No | Cashier name printed on close bill |
 | `input_by` | string | No | Username/operator who created the bill |
 | `items` | array | Yes | Array of purchased items |
-| `items[].prefix` | string | Yes | Item number prefix (e.g., "1.") |
 | `items[].name` | string | Yes | Item name (will be displayed in bold) |
 | `items[].qty` | integer | Yes | Item quantity |
 | `items[].price` | string | Yes | Item total price (formatted) |
 | `items[].note` | string | No | Special notes for this item |
-| `subtotal` | string | Yes | Subtotal before tax (formatted with Rp) |
+| `subtotal` | string | Yes | Subtotal before charges (formatted with Rp) |
 | `service_charge_amount` | string | No | Service charge amount (formatted with Rp) |
 | `service_charge_prct` | number | No | Service charge percentage (e.g., 5 or 5.0) |
-| `tax` | string | Yes | Tax amount (formatted with Rp) |
+| `reprint_count` | integer | No | Reprint sequence number; when > 0 a bold **REPRINT N** banner is printed after the header |
+| `tax` | string | Yes | Tax amount / PB1 (formatted with Rp) |
 | `discount` | string | No | Discount amount (formatted with Rp) |
 | `discount_prct` | number | No | Discount percentage (e.g., 10 or 10.0) |
 | `total` | string | Yes | Grand total (formatted with Rp) |
@@ -272,7 +364,8 @@ API endpoint: `POST /api/v1/initiate-print`
     "change": "Rp 0",
     "total_items": 2,
     "total_qty": 5,
-    "tagline": "Terima Kasih"
+    "tagline": "Terima Kasih",
+    "reprint_count": 2
   }
 }
 ```
@@ -310,7 +403,7 @@ API endpoint: `POST /api/v1/initiate-print`
 | `items[].discount` | string | No | Discount per item (formatted with Rp) |
 | `items[].note` | string | No | Special notes for this item |
 | `items[].amount` | string | Yes | Line total (formatted with Rp) |
-| `subtotal` | string | Yes | Subtotal before tax (formatted with Rp) |
+| `subtotal` | string | Yes | Subtotal before Tax (formatted with Rp) |
 | `discount` | string | No | Total discount (formatted with Rp) |
 | `tax_rate` | string | No | Tax percentage (e.g., "11") |
 | `tax` | string | Yes | Tax amount (formatted with Rp) |
@@ -376,6 +469,59 @@ API endpoint: `POST /api/v1/initiate-print`
 ```
 
 ---
+
+    ## 7. Close Cashier Template (`close_cashier.txt`)
+
+    Daily cashier closing summary for 40-column thermal printers.
+
+    ### Contract
+
+    | Field | Type | Required | Description |
+    |-------|------|----------|-------------|
+    | `cashier_name` | string | Yes | Name of the closing cashier ("Closing Kasir") |
+    | `cashier_no` | string | Yes | Cashier/session number ("No. Kasir") |
+    | `close_date` | string | Yes | Closing date (DD-MM-YYYY) |
+    | `close_time` | string | Yes | Closing time (HH:MM:SS) |
+    | `sales_total` | string | Yes | Total sales amount (formatted with Rp) |
+    | `total_dp` | string | No | Total DP amount (formatted with Rp) |
+    | `grand_total` | string | No | Grand total amount (formatted with Rp); if omitted, `sales_total` is reused |
+    | `tunai` | string | Yes | Cash payments total (formatted with Rp) |
+    | `credit` | string | Yes | Credit card payments total (formatted with Rp) |
+    | `debit` | string | Yes | Debit card payments total (formatted with Rp) |
+    | `qris` | string | Yes | QRIS / e-wallet payments total (formatted with Rp) |
+    | `opening_balance` | string | Yes | Opening cash drawer balance ("Modal POS") |
+    | `change` | string | Yes | Cash taken out/withdrawn ("Penarikan Tunai") |
+    | `closing_balance` | string | Yes | Final cash drawer balance ("Saldo Akhir") |
+    | `printby` | string | Yes | Name printed in footer ("Print By ...") |
+    | `timestamp` | string | No | Printed footer timestamp; if omitted, auto-generated in UTC+7 |
+
+    ### Example Request
+
+    ```json
+    {
+      "template_name": "close_cashier.txt",
+      "printer_code": "BAR",
+      "metadata": {
+        "cashier_name": "HANA",
+        "cashier_no": "S5K202603060001",
+        "close_date": "06-03-2026",
+        "close_time": "16:46:03",
+        "sales_total": "Rp 16.590.450",
+        "total_dp": "Rp 0",
+        "grand_total": "Rp 16.590.450",
+        "tunai": "Rp 5.640.950",
+        "credit": "Rp 0",
+        "debit": "Rp 10.949.500",
+        "qris": "Rp 0",
+        "opening_balance": "Rp 630.000",
+        "change": "Rp 0",
+        "closing_balance": "Rp 5.640.950",
+        "printby": "HANA"
+      }
+    }
+    ```
+
+    ---
 
 ## 6. Bar Template (`bar.txt`)
 

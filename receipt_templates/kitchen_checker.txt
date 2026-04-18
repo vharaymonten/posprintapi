@@ -5,12 +5,16 @@
    items: list of { name, qty },
    kitchen_note (optional free text).
    cancel_order (optional, default 0): set to 1 to show CANCELLATION banner.
+   reprint_count (optional, default 0): set to N to show bold REPRINT N banner.
 #}
 {% set w = 40 %}
 {% set cancel_order = cancel_order | default(0) %}
 {{ 'CHECKER KITCHEN'|center(w) }}
 {% if cancel_order %}
 {{ DOUBLE_SIZE_ON }}{{ BOLD_ON }}{{ '** CANCELLATION **'|center(w // 2) }}{{ BOLD_OFF }}{{ NORMAL_SIZE }}
+{% endif %}
+{% if reprint_count is defined and reprint_count %}
+{{ BOLD_ON }}{{ ('REPRINT ' + (reprint_count|string))|upper|center(w) }}{{ BOLD_OFF }}
 {% endif %}
 {{ '-' * w }}
 Order No : {{ order_no }}
