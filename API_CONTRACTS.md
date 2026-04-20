@@ -1,4 +1,58 @@
-# Printer API - Template Contracts
+# Printer API Contracts
+
+Base URL: `/`
+
+## Core Endpoints
+
+### Health
+
+- `GET /health`
+
+### Printers (SQLite-backed)
+
+- `GET /api/v1/printers` List printers (includes `is_available`)
+- `POST /api/v1/printers` Create printer
+- `GET /api/v1/printers/{printer_id}` Get printer
+- `PATCH /api/v1/printers/{printer_id}` Update printer (partial)
+- `PUT /api/v1/printers/{printer_id}` Replace printer
+- `DELETE /api/v1/printers/{printer_id}` Delete printer
+- `GET /api/v1/printers/discover?network=192.168.1&port=9100` Network discovery
+
+**Models**
+
+Create (`POST /api/v1/printers`)
+
+```json
+{
+  "name": "BAR",
+  "printer_code": "BAR",
+  "host": "192.168.3.162",
+  "port": 9100
+}
+```
+
+Update (`PATCH /api/v1/printers/{printer_id}`) uses the same fields, all optional.
+
+Printer Response (`GET/POST/PATCH/PUT`)
+
+```json
+{
+  "id": "uuid",
+  "name": "BAR",
+  "printer_code": "BAR",
+  "host": "192.168.3.162",
+  "port": 9100,
+  "is_available": true
+}
+```
+
+### UI (no auth)
+
+- `GET /ui/printers` Simple CRUD UI (calls the APIs above)
+
+---
+
+## Printing
 
 API endpoint: `POST /api/v1/initiate-print`
 
@@ -15,6 +69,14 @@ API endpoint: `POST /api/v1/initiate-print`
 }
 ```
 
+### Auto-generated Fields (Jakarta time, UTC+7)
+
+If omitted from `metadata`, the service fills:
+
+- `date` as `YYYY-MM-DD`
+- `time` as `HH:MM:SS`
+- `timestamp` as `DD-MM-YYYY HH:MM AM/PM`
+
 ---
 
 ## 1. Kitchen Template (`kitchen.txt`)
@@ -28,6 +90,8 @@ API endpoint: `POST /api/v1/initiate-print`
 | `customer_name` | string | Yes | Customer name |
 | `cashier_name` | string | No | Cashier name printed on ticket |
 | `input_by` | string | No | Username/operator who input the order |
+| `date` | string | No | Print date (YYYY-MM-DD). Auto-generated if omitted |
+| `time` | string | No | Print time (HH:MM:SS). Auto-generated if omitted |
 | `items` | array | Yes | Array of order items |
 | `items[].name` | string | Yes | Item name (displayed in **bold + double-height**) |
 | `items[].qty` | integer | Yes | Item quantity |
@@ -69,9 +133,12 @@ API endpoint: `POST /api/v1/initiate-print`
 |-------|------|----------|-------------|
 | `order_no` | string | Yes | Order number/ID |
 | `table_no` | string | Yes | Table number |
+| `pax_count` | integer | No | Number of guests |
 | `customer_name` | string | Yes | Customer name |
 | `cashier_name` | string | No | Cashier name printed on ticket |
 | `input_by` | string | No | Username/operator who input the order |
+| `date` | string | No | Print date (YYYY-MM-DD). Auto-generated if omitted |
+| `time` | string | No | Print time (HH:MM:SS). Auto-generated if omitted |
 | `items` | array | Yes | Array of order items |
 | `items[].name` | string | Yes | Item name (displayed in **bold + double-height**) |
 | `items[].qty` | integer | Yes | Item quantity |
@@ -117,6 +184,8 @@ API endpoint: `POST /api/v1/initiate-print`
 | `customer_name` | string | Yes | Customer name |
 | `cashier_name` | string | No | Cashier name printed on ticket |
 | `input_by` | string | No | Username/operator who input the order |
+| `date` | string | No | Print date (YYYY-MM-DD). Auto-generated if omitted |
+| `time` | string | No | Print time (HH:MM:SS). Auto-generated if omitted |
 | `items` | array | Yes | Array of order items |
 | `items[].name` | string | Yes | Item name (displayed in **bold + double-size**) |
 | `items[].qty` | integer | Yes | Item quantity |
@@ -159,6 +228,8 @@ API endpoint: `POST /api/v1/initiate-print`
 | `order_no` | string | Yes | Order number/ID |
 | `table_no` | string | Yes | Table number |
 | `customer_name` | string | Yes | Customer name |
+| `date` | string | No | Print date (YYYY-MM-DD). Auto-generated if omitted |
+| `time` | string | No | Print time (HH:MM:SS). Auto-generated if omitted |
 | `items` | array | Yes | Array of order items |
 | `items[].name` | string | Yes | Item name (displayed in **bold + double-size**) |
 | `items[].qty` | integer | Yes | Item quantity |
@@ -203,8 +274,8 @@ API endpoint: `POST /api/v1/initiate-print`
 | `phone` | string | Yes | Contact phone number |
 | `email` | string | Yes | Contact email |
 | `tagline` | string | No | Store tagline/slogan |
-| `date` | string | Yes | Transaction date (YYYY-MM-DD) |
-| `time` | string | Yes | Transaction time (HH:MM:SS) |
+| `date` | string | No | Transaction date (YYYY-MM-DD). Auto-generated if omitted |
+| `time` | string | No | Transaction time (HH:MM:SS). Auto-generated if omitted |
 | `invoice_no` | string | Yes | Invoice/receipt number |
 | `customer_name` | string | No | Customer name (printed on receipt) |
 | `cashier_label` | string | Yes | Cashier name (e.g., "Kasir: Alice") |
@@ -277,41 +348,38 @@ API endpoint: `POST /api/v1/initiate-print`
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `store_name` | string | Yes | Restaurant/store name |
-| `address_line_1` | string | Yes | First line of address |
-| `address_line_2` | string | No | Second line of address |
-| `city_line` | string | Yes | City and postal code |
-| `npwp` | string | Yes | Tax ID number (NPWP) |
+| `store_name` | string | No | Restaurant/store name (defaults to "ANEKA Restoran") |
+| `instagram` | string | No | Instagram handle shown as `[IG] ...` |
+| `whatsapp` | string | No | WhatsApp number shown as `[WA] ...` |
+| `city_line` | string | Yes | City line |
 | `phone` | string | Yes | Contact phone number |
-| `email` | string | Yes | Contact email |
-| `date` | string | Yes | Transaction date (YYYY-MM-DD) |
-| `time` | string | Yes | Transaction time (HH:MM:SS) |
+| `date` | string | No | Transaction date (YYYY-MM-DD). Auto-generated if omitted |
+| `time` | string | No | Transaction time (HH:MM:SS). Auto-generated if omitted |
 | `bill_no` | string | Yes | Bill number |
 | `table_no` | string | Yes | Table number |
-| `customer_name` | string | No | Customer name (printed under table) |
-| `cashier_name` | string | No | Cashier name printed on close bill |
+| `pax_count` | integer | No | Number of guests |
+| `customer_name` | string | No | Customer name |
+| `cashier_name` | string | No | Cashier name |
 | `input_by` | string | No | Username/operator who created the bill |
 | `items` | array | Yes | Array of purchased items |
-| `items[].name` | string | Yes | Item name (will be displayed in bold) |
+| `items[].name` | string | Yes | Item name (bold) |
 | `items[].qty` | integer | Yes | Item quantity |
-| `items[].price` | string | Yes | Item total price (formatted) |
-| `items[].note` | string | No | Special notes for this item |
-| `subtotal` | string | Yes | Subtotal before charges (formatted with Rp) |
-| `service_charge_amount` | string | No | Service charge amount (formatted with Rp) |
-| `service_charge_prct` | number | No | Service charge percentage (e.g., 5 or 5.0) |
-| `reprint_count` | integer | No | Reprint sequence number; when > 0 a bold **REPRINT N** banner is printed after the header |
-| `tax` | string | Yes | Tax amount / PB1 (formatted with Rp) |
-| `discount` | string | No | Discount amount (formatted with Rp) |
-| `discount_prct` | number | No | Discount percentage (e.g., 10 or 10.0) |
-| `total` | string | Yes | Grand total (formatted with Rp) |
-| `payments` | array | Yes | Array of payment methods used |
-| `payments[].type` | string | Yes | Payment type (e.g., "Cash", "Card", "E-Wallet") |
-| `payments[].amount` | string | Yes | Amount paid via this method (formatted with Rp) |
-| `total_payment` | string | Yes | Total amount paid (formatted with Rp) |
-| `change` | string | Yes | Change returned (formatted with Rp) |
-| `total_items` | integer | Yes | Total number of item types |
-| `total_qty` | integer | Yes | Total quantity of all items |
-| `tagline` | string | No | Store tagline/closing message |
+| `items[].price` | string | Yes | Item line total (formatted) |
+| `items[].note` | string | No | Item note |
+| `subtotal` | string | Yes | Subtotal (formatted) |
+| `discount` | string | No | Discount amount (formatted) |
+| `discount_prct` | number | No | Discount percent |
+| `service_charge_amount` | string | No | Service charge amount (formatted) |
+| `service_charge_prct` | number | No | Service charge percent (optional metadata; not required for rendering) |
+| `tax` | string | Yes | PB1 / tax amount (formatted) |
+| `total` | string | Yes | Grand total (formatted) |
+| `payments` | array | No | Payment breakdown; if omitted, payment rows are not printed |
+| `payments[].type` | string | Yes | Payment type |
+| `payments[].amount` | string | Yes | Payment amount (formatted) |
+| `total_payment` | string | No | Total paid (formatted; required if `payments` is present) |
+| `change` | string | No | Change (formatted; required if `payments` is present) |
+| `tagline` | string | No | Centered footer line |
+| `reprint_count` | integer | No | When > 0, prints bold **REPRINT N** banner |
 
 ### Example Request
 
@@ -321,29 +389,26 @@ API endpoint: `POST /api/v1/initiate-print`
   "printer_code": "BAR",
   "metadata": {
     "store_name": "ANEKA Restoran",
-    "address_line_1": "Jl. Sudirman No. 123",
-    "address_line_2": "Kelurahan Senayan",
+    "instagram": "@anekasari",
+    "whatsapp": "+62 812-0000-0000",
     "city_line": "Jakarta Selatan, DKI Jakarta 12190",
-    "npwp": "01.234.567.8-901.000",
     "phone": "+62 21 5551234",
-    "email": "info@anekarestoran.com",
     "date": "2026-02-21",
     "time": "20:15:30",
     "bill_no": "BILL-2026-0221-0089",
     "table_no": "12",
+    "pax_count": 4,
     "customer_name": "Budi Santoso",
     "cashier_name": "Siti",
     "input_by": "system",
     "items": [
       {
-        "prefix": "1.",
         "name": "Nasi Goreng Special",
         "qty": 2,
         "price": "Rp 90.000",
         "note": "Pedas sedang, tanpa terasi"
       },
       {
-        "prefix": "2.",
         "name": "Es Teh Manis",
         "qty": 3,
         "price": "Rp 15.000"
@@ -362,8 +427,6 @@ API endpoint: `POST /api/v1/initiate-print`
     ],
     "total_payment": "Rp 110.500",
     "change": "Rp 0",
-    "total_items": 2,
-    "total_qty": 5,
     "tagline": "Terima Kasih",
     "reprint_count": 2
   }
@@ -387,8 +450,8 @@ API endpoint: `POST /api/v1/initiate-print`
 | `email` | string | Yes | Contact email |
 | `website` | string | No | Company website |
 | `invoice_no` | string | Yes | Invoice number |
-| `date` | string | Yes | Invoice date (YYYY-MM-DD) |
-| `time` | string | Yes | Invoice time (HH:MM:SS) |
+| `date` | string | No | Invoice date (YYYY-MM-DD). Auto-generated if omitted |
+| `time` | string | No | Invoice time (HH:MM:SS). Auto-generated if omitted |
 | `due_date` | string | No | Payment due date (YYYY-MM-DD) |
 | `customer_name` | string | Yes | Customer/company name |
 | `customer_address` | string | No | Customer address |
@@ -530,16 +593,18 @@ API endpoint: `POST /api/v1/initiate-print`
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `order_no` | string | Yes | Order number/ID |
-| `table_no` | string | Yes | Table number or location |
-| `server_name` | string | No | Server/waiter name (default: "Bar") |
-| `time` | string | Yes | Order time (HH:MM:SS) |
-| `items` | array | Yes | Array of drink items |
-| `items[].qty` | integer | Yes | Quantity of drinks |
-| `items[].name` | string | Yes | Drink/beverage name (displayed in **bold + double-height**, centered) |
-| `items[].note` | string | No | Special preparation notes (e.g., "Extra lime", "No ice") |
-| `total_qty` | integer | Yes | Total quantity of all drinks |
-| `special_note` | string | No | Special instructions or priority notes |
-| `time_ordered` | string | No | Short time format for display (HH:MM) |
+| `table_no` | string | Yes | Table number |
+| `customer_name` | string | Yes | Customer name |
+| `cashier_name` | string | No | Cashier name |
+| `input_by` | string | No | Username/operator who input the order |
+| `date` | string | No | Print date (YYYY-MM-DD). Auto-generated if omitted |
+| `time` | string | No | Print time (HH:MM:SS). Auto-generated if omitted |
+| `items` | array | Yes | Array of items |
+| `items[].name` | string | Yes | Item name (double-size) |
+| `items[].qty` | integer | Yes | Item quantity |
+| `items[].note` | string | No | Item note |
+| `checker_note` | string | No | Special instructions |
+| `cancel_order` | integer | No | Set to `1` to print bold **CANCELLATION** banner |
 
 ### Example Request
 
@@ -548,29 +613,23 @@ API endpoint: `POST /api/v1/initiate-print`
   "template_name": "bar.txt",
   "printer_code": "BAR",
   "metadata": {
-    "order_no": "BAR-002",
+    "order_no": "ORD-20260221-001",
     "table_no": "7",
-    "server_name": "Bob",
-    "time": "21:30:00",
+    "customer_name": "Budi Santoso",
+    "cashier_name": "Siti",
+    "input_by": "system",
     "items": [
       {
-        "qty": 1,
-        "name": "Long Island Ice Tea",
-        "note": "Extra lime"
-      },
-      {
+        "name": "Es Teh Manis",
         "qty": 2,
-        "name": "Whiskey Sour",
-        "note": "No ice"
+        "note": "Less sugar"
       },
       {
-        "qty": 1,
-        "name": "Cosmopolitan"
+        "name": "Lemon Tea",
+        "qty": 1
       }
     ],
-    "total_qty": 4,
-    "special_note": "VIP Table - Priority Service",
-    "time_ordered": "21:30"
+    "checker_note": ""
   }
 }
 ```
@@ -620,16 +679,12 @@ API endpoint: `POST /api/v1/initiate-print`
 ## Notes
 
 - **Rupiah Formatting**: All price fields should be pre-formatted as strings with "Rp" prefix and thousand separators (e.g., "Rp 1.250.000")
-- **Dates**: Use ISO format (YYYY-MM-DD) for dates
-- **Times**: Use 24-hour format (HH:MM:SS) for times
+- **Dates/Times**: If `date`/`time` are not provided, they are auto-generated in Jakarta time (UTC+7)
 - **Printer Selection**: Use either `printer_code` (configured in YAML) or `printer_id` (from API). If both omitted, returns preview only
 - **Template Extensions**: Always include `.txt` extension in `template_name` (e.g., "receipt.txt", not "receipt")
-- **Line Width**: 
-  - Kitchen, Checker, Receipt, CloseBill, Invoice: 40 columns
-  - Bar: 48 columns (wider format)
+- **Line Width**: Templates are formatted for 40-column thermal printers
 - **Text Formatting**:
   - Item names are displayed in **bold** text
-  - Kitchen, Checker, and Bar templates use **double-height** text for item names (2x taller)
-  - Receipt, CloseBill, and Invoice use normal-height bold text
+  - Some templates use **double-size / double-height** ESC/POS commands for emphasis
 - **Item Notes**: All templates support optional `note` field at item level for special instructions
-- **Template Count**: 6 templates available (Kitchen, Checker, Receipt, CloseBill, Invoice, Bar)
+- **Template Set**: See `receipt_templates/*.txt` for the current list of templates
