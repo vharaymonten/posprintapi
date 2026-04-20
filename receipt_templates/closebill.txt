@@ -8,8 +8,11 @@
 {% set w = 40 %}
 {{ IMAGE('logo/logo.jpg', height_cm=2, align='center') }}
 {{ store_name|default('ANEKA Restoran')|upper|center(w) }}
-{{ address_line_1|center(w) }}
-{% if address_line_2 %}{{ address_line_2|center(w) }}
+{% if instagram is defined and instagram %}
+{{ ('[IG] ' + instagram)|center(w) }}
+{% endif %}
+{% if whatsapp is defined and whatsapp %}
+{{ ('[WA] ' + whatsapp)|center(w) }}
 {% endif %}
 {{ city_line|center(w) }}
 Telp  : {{ phone }}
@@ -26,8 +29,7 @@ Customer : {{ customer_name }}
 Cashier  : {{ cashier_name }}
 Input By : {{ input_by }}
 {{ '-' * w }}
-
-{% for item in items %}
+{%- for item in items %}
 {{ BOLD_ON }}{{ item.name|upper|truncate(w) }}{{ BOLD_OFF }}
 {{ (item.qty|string)|rjust(3) }} x {{ item.price|rjust(w - 7) }}
 {% if item.note %}
@@ -50,14 +52,11 @@ PB1{{ tax|rjust(w - 3) }}
 {{ '-' * w }}
 {{ BOLD_ON }}Grand Total{{ total|rjust(w - 11) }}{{ BOLD_OFF }}
 {% if payments %}
-{{ '-' * w }}
 {% for payment in payments %}
 {{ payment.type|ljust(20) }}{{ payment.amount|rjust(w - 20) }}
 {% endfor %}
-{{ '-' * w }}
 Total Payment{{ total_payment|rjust(w - 13) }}
 Change{{ change|rjust(w - 6) }}
-{{ '-' * w }}
 {% endif %}
 
 {{ tagline|center(w) }}
