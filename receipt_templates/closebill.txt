@@ -29,7 +29,7 @@ Customer : {{ customer_name }}
 Cashier  : {{ cashier_name }}
 Input By : {{ input_by }}
 {{ '-' * w }}
-{%- for item in items %}
+{% for item in items %}
 {{ BOLD_ON }}{{ item.name|upper|truncate(w) }}{{ BOLD_OFF }}
 {{ (item.qty|string)|rjust(3) }} x {{ item.price|rjust(w - 7) }}
 {% if item.note %}
