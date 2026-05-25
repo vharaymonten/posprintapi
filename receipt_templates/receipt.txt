@@ -12,9 +12,6 @@
 {{ address_line_1|center(w) }}
 {% if address_line_2 %}{{ address_line_2|center(w) }}
 {% endif %}
-{{ city_line|center(w) }}
-NPWP  : {{ npwp }}
-Telp  : {{ phone }}
 Email : {{ email }}
 {{ tagline|center(w) }}
 {{ '-' * w }}

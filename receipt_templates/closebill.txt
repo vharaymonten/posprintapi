@@ -14,8 +14,6 @@
 {% if whatsapp is defined and whatsapp %}
 {{ ('[WA] ' + whatsapp)|center(w) }}
 {% endif %}
-{{ city_line|center(w) }}
-Telp  : {{ phone }}
 {{ '-' * w }}
 {% if reprint_count is defined and reprint_count %}
 {{ BOLD_ON }}{{ ('REPRINT ' + (reprint_count|string))|upper|center(w) }}{{ BOLD_OFF }}

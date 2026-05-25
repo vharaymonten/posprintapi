@@ -19,9 +19,6 @@ Thank you for your order!
 {{ store_name|upper|center(w) }}
 {{ address_line_1|center(w) }}
 {{ address_line_2|center(w) }}
-{{ city_line|center(w) }}
-NPWP  : {{ npwp }}
-Telp  : {{ phone }}
 Email : {{ email }}
 Website: {{ website|default('-') }}
 
