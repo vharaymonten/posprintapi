@@ -6,6 +6,7 @@
    reprint_count  — integer > 0 to show bold REPRINT banner
 #}
 {% set w = 40 %}
+{{ IMAGE('logo/logo.jpg', height_cm=2, align='center') }}
 {{ store_name|default('ANEKA Restoran')|upper|center(w) }}
 {{ IMAGE('logo/instagram.png', height_cm=0.5, align='left', text=instagram|default('anekasari.dapurrasa')) }}
 {{ IMAGE('logo/wa.png', height_cm=0.5, align='left', text=whatsapp|default('082211118868')) }}
