@@ -9,7 +9,7 @@ from typing import Optional
 
 import jinja2
 from jinja2 import TemplateNotFound
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
 from app.core.config import settings
 from app.models.printer import Printer
@@ -101,16 +101,40 @@ class PrintService:
         
         return template.render(**template_context)
 
-    def _image_token(self, path: str, height_cm: float = 2.0, align: str = "center") -> str:
+    def _image_token(
+        self,
+        path: str,
+        height_cm: float = 2.0,
+        align: str = "center",
+        text: Optional[str] = None,
+    ) -> str:
+        data = {"path": path, "height_cm": height_cm, "align": align}
+        if text is not None:
+            data["text"] = str(text)
         payload = base64.b64encode(
-            json.dumps(
-                {"path": path, "height_cm": height_cm, "align": align},
-                separators=(",", ":"),
-            ).encode("utf-8")
+            json.dumps(data, separators=(",", ":")).encode("utf-8")
         ).decode("ascii")
         return f"[[[IMG:{payload}]]]"
 
-    def _build_image_bytes(self, path: str, height_cm: float, align: str) -> bytes:
+    def _compose_logo_text(self, logo: Image.Image, text: str) -> Image.Image:
+        """Paste *text* to the right of *logo*, vertically centered, on one band."""
+        h = logo.height
+        font = ImageFont.load_default(size=max(12, int(round(h * 0.7))))
+        gap = max(4, int(round(h * 0.25)))
+        measure = ImageDraw.Draw(Image.new("L", (1, 1)))
+        bbox = measure.textbbox((0, 0), text, font=font)
+        text_w = bbox[2] - bbox[0]
+        text_h = bbox[3] - bbox[1]
+        canvas = Image.new("L", (logo.width + gap + text_w, h), 255)
+        canvas.paste(logo, (0, 0))
+        draw = ImageDraw.Draw(canvas)
+        ty = (h - text_h) // 2 - bbox[1]
+        draw.text((logo.width + gap, ty), text, font=font, fill=0)
+        return canvas
+
+    def _build_image_bytes(
+        self, path: str, height_cm: float, align: str, text: Optional[str] = None
+    ) -> bytes:
         align_normalized = (align or "center").strip().lower()
         if align_normalized == "center":
             align_bytes = CENTER
@@ -140,16 +164,19 @@ class PrintService:
             if orig_h <= 0 or orig_w <= 0:
                 raise ValueError(f"Invalid image size: {path}")
 
-            new_w = max(1, int(round(orig_w * (height_px / orig_h))))
-            new_h = height_px
+            logo_w = max(1, int(round(orig_w * (height_px / orig_h))))
+            img = img.resize((logo_w, height_px), Image.Resampling.LANCZOS)
 
+            if text:
+                img = self._compose_logo_text(img, text)
+
+            new_w, new_h = img.size
             max_width_dots = 384
             if new_w > max_width_dots:
                 scale = max_width_dots / new_w
                 new_w = max(1, int(round(new_w * scale)))
                 new_h = max(1, int(round(new_h * scale)))
-
-            img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+                img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
 
             bw = img.convert("1", dither=Image.Dither.FLOYDSTEINBERG)
 
@@ -196,6 +223,7 @@ class PrintService:
                     path=str(payload.get("path", "")),
                     height_cm=float(payload.get("height_cm", 2.0)),
                     align=str(payload.get("align", "center")),
+                    text=payload.get("text"),
                 )
             )
             pos = match.end()
