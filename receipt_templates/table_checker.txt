@@ -40,3 +40,4 @@ Note: {{ item.note|truncate(w - 6) }}
 {{ '-' * w }}
 --- Checker Note ---
 {{ checker_note }}
+

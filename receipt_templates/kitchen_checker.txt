@@ -33,3 +33,4 @@ Time     : {{ time }}
 {{ '-' * w }}
 --- Kitchen Note ---
 {{ kitchen_note }}
+

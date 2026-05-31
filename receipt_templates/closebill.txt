@@ -54,3 +54,4 @@ Change{{ change|rjust(w - 6) }}
 
 {{ tagline|center(w) }}
 Terimakasih Atas Kunjungan Anda
+
