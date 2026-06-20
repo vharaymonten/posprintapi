@@ -147,20 +147,33 @@ class PrintService:
         ).decode("ascii")
         return f"[[[IMG:{payload}]]]"
 
-    def _compose_logo_text(self, logo: Image.Image, text: str) -> Image.Image:
-        """Paste *text* to the right of *logo*, vertically centered, on one band."""
+    def _compose_logo_text(
+        self, logo: Image.Image, text: str, font_px: Optional[int] = None
+    ) -> Image.Image:
+        """Paste *text* to the right of *logo*, vertically centered, on one band.
+
+        The text is rendered with a stroke so it stays large and bold even after
+        the row is scaled down to the print head width. *font_px* overrides the
+        text size (defaults to ~1.2x the logo height) so the row builder can use
+        bigger text alongside smaller icons.
+        """
         h = logo.height
-        font = ImageFont.load_default(size=max(12, int(round(h * 0.7))))
+        font_size = font_px if font_px else max(20, int(round(h * 1.2)))
+        font = ImageFont.load_default(size=font_size)
+        stroke = max(1, int(round(font_size * 0.08)))  # simulate bold weight
         gap = max(4, int(round(h * 0.25)))
         measure = ImageDraw.Draw(Image.new("L", (1, 1)))
-        bbox = measure.textbbox((0, 0), text, font=font)
+        bbox = measure.textbbox((0, 0), text, font=font, stroke_width=stroke)
         text_w = bbox[2] - bbox[0]
         text_h = bbox[3] - bbox[1]
-        canvas = Image.new("L", (logo.width + gap + text_w, h), 255)
-        canvas.paste(logo, (0, 0))
+        band_h = max(h, text_h)
+        canvas = Image.new("L", (logo.width + gap + text_w, band_h), 255)
+        ly = (band_h - h) // 2
+        canvas.paste(logo, (0, ly))
         draw = ImageDraw.Draw(canvas)
-        ty = (h - text_h) // 2 - bbox[1]
-        draw.text((logo.width + gap, ty), text, font=font, fill=0)
+        tx = logo.width + gap - bbox[0]
+        ty = (band_h - text_h) // 2 - bbox[1]
+        draw.text((tx, ty), text, font=font, fill=0, stroke_width=stroke, stroke_fill=0)
         return canvas
 
     def _align_bytes(self, align: str) -> bytes:
@@ -254,12 +267,18 @@ class PrintService:
         height_px = max(1, int(round((float(height_cm) / 2.54) * dpi)))
         gap_px = max(0, int(round((float(gap_cm) / 2.54) * dpi)))
 
+        # On one 58mm row the band is shrunk to fit the head, so render the
+        # icons a bit smaller and the text a bit larger than the icons. That
+        # gives the text a bigger share of the width => bigger printed text.
+        icon_px = max(1, int(round(height_px * 0.65)))
+        text_px = max(20, int(round(height_px * 1.4)))
+
         bands = []
         for item in items:
-            logo = self._load_logo_gray(str(item.get("path", "")), height_px)
+            logo = self._load_logo_gray(str(item.get("path", "")), icon_px)
             text = item.get("text")
             if text:
-                logo = self._compose_logo_text(logo, str(text))
+                logo = self._compose_logo_text(logo, str(text), font_px=text_px)
             bands.append(logo)
 
         if not bands:
