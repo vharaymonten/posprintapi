@@ -55,6 +55,7 @@ class PrintService:
         self._env.filters['ljust'] = lambda s, width, fillchar=' ': str(s).ljust(width, fillchar)
         self._env.filters['truncate'] = lambda s, length, end='...': str(s)[:length] if len(str(s)) <= length else str(s)[:length-len(end)] + end
         self._env.globals["IMAGE"] = self._image_token
+        self._env.globals["IMAGE_ROW"] = self._image_row_token
 
     def render_template(self, template_name: str, metadata: dict) -> str:
         """Render a Jinja2 template by name with the given metadata.
@@ -116,6 +117,36 @@ class PrintService:
         ).decode("ascii")
         return f"[[[IMG:{payload}]]]"
 
+    def _image_row_token(
+        self,
+        items,
+        height_cm: float = 0.5,
+        align: str = "center",
+        gap_cm: float = 0.4,
+    ) -> str:
+        """Compose several logo+text pairs onto a single horizontal band.
+
+        *items* is an iterable of dicts/mappings with ``path`` and optional
+        ``text`` keys. The whole row is rendered as one image, so the items
+        print side by side on the same line.
+        """
+        norm = []
+        for item in items:
+            entry = {"path": item.get("path", "")}
+            if item.get("text") is not None:
+                entry["text"] = str(item.get("text"))
+            norm.append(entry)
+        data = {
+            "row": norm,
+            "height_cm": height_cm,
+            "align": align,
+            "gap_cm": gap_cm,
+        }
+        payload = base64.b64encode(
+            json.dumps(data, separators=(",", ":")).encode("utf-8")
+        ).decode("ascii")
+        return f"[[[IMG:{payload}]]]"
+
     def _compose_logo_text(self, logo: Image.Image, text: str) -> Image.Image:
         """Paste *text* to the right of *logo*, vertically centered, on one band."""
         h = logo.height
@@ -132,17 +163,17 @@ class PrintService:
         draw.text((logo.width + gap, ty), text, font=font, fill=0)
         return canvas
 
-    def _build_image_bytes(
-        self, path: str, height_cm: float, align: str, text: Optional[str] = None
-    ) -> bytes:
+    def _align_bytes(self, align: str) -> bytes:
         align_normalized = (align or "center").strip().lower()
         if align_normalized == "center":
-            align_bytes = CENTER
+            return CENTER
         elif align_normalized == "left":
-            align_bytes = LEFT
+            return LEFT
         else:
             raise ValueError(f"Unsupported image align: {align}")
 
+    def _load_logo_gray(self, path: str, height_px: int) -> Image.Image:
+        """Open *path*, flatten transparency, and resize to *height_px* tall."""
         img_path = (self._base_dir / path).resolve()
         if not img_path.exists():
             raise ValueError(f"Image not found: {path}")
@@ -157,53 +188,93 @@ class PrintService:
 
             img = img.convert("L")
 
-            dpi = 203
-            height_px = max(1, int(round((float(height_cm) / 2.54) * dpi)))
-
             orig_w, orig_h = img.size
             if orig_h <= 0 or orig_w <= 0:
                 raise ValueError(f"Invalid image size: {path}")
 
             logo_w = max(1, int(round(orig_w * (height_px / orig_h))))
-            img = img.resize((logo_w, height_px), Image.Resampling.LANCZOS)
+            return img.resize((logo_w, height_px), Image.Resampling.LANCZOS)
 
+    def _raster_band_bytes(self, img: Image.Image, align_bytes: bytes) -> bytes:
+        """Scale *img* to fit the 58mm print head and emit an ESC/POS raster."""
+        new_w, new_h = img.size
+        max_width_dots = 384  # 58mm thermal head printable width @203dpi
+        if new_w > max_width_dots:
+            scale = max_width_dots / new_w
+            new_w = max(1, int(round(new_w * scale)))
+            new_h = max(1, int(round(new_h * scale)))
+            img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
+        bw = img.convert("1", dither=Image.Dither.FLOYDSTEINBERG)
+
+        width_bytes = (new_w + 7) // 8
+        padded_w = width_bytes * 8
+        if padded_w != new_w:
+            padded = Image.new("1", (padded_w, new_h), 1)
+            padded.paste(bw, (0, 0))
+            bw = padded
+
+        pixels = bw.load()
+        raster = bytearray()
+        for y in range(new_h):
+            for xb in range(width_bytes):
+                b = 0
+                for bit in range(8):
+                    x = xb * 8 + bit
+                    if pixels[x, y] == 0:
+                        b |= 1 << (7 - bit)
+                raster.append(b)
+
+        xL = width_bytes & 0xFF
+        xH = (width_bytes >> 8) & 0xFF
+        yL = new_h & 0xFF
+        yH = (new_h >> 8) & 0xFF
+        image_cmd = GS + b"v0" + bytes([0, xL, xH, yL, yH]) + bytes(raster)
+        return align_bytes + image_cmd + b"\n" + LEFT
+
+    def _build_image_bytes(
+        self, path: str, height_cm: float, align: str, text: Optional[str] = None
+    ) -> bytes:
+        align_bytes = self._align_bytes(align)
+        dpi = 203
+        height_px = max(1, int(round((float(height_cm) / 2.54) * dpi)))
+
+        img = self._load_logo_gray(path, height_px)
+        if text:
+            img = self._compose_logo_text(img, text)
+
+        return self._raster_band_bytes(img, align_bytes)
+
+    def _build_image_row_bytes(
+        self, items, height_cm: float, align: str, gap_cm: float = 0.4
+    ) -> bytes:
+        """Render several logo+text pairs side by side on one raster band."""
+        align_bytes = self._align_bytes(align)
+        dpi = 203
+        height_px = max(1, int(round((float(height_cm) / 2.54) * dpi)))
+        gap_px = max(0, int(round((float(gap_cm) / 2.54) * dpi)))
+
+        bands = []
+        for item in items:
+            logo = self._load_logo_gray(str(item.get("path", "")), height_px)
+            text = item.get("text")
             if text:
-                img = self._compose_logo_text(img, text)
+                logo = self._compose_logo_text(logo, str(text))
+            bands.append(logo)
 
-            new_w, new_h = img.size
-            max_width_dots = 384
-            if new_w > max_width_dots:
-                scale = max_width_dots / new_w
-                new_w = max(1, int(round(new_w * scale)))
-                new_h = max(1, int(round(new_h * scale)))
-                img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+        if not bands:
+            raise ValueError("IMAGE_ROW requires at least one item")
 
-            bw = img.convert("1", dither=Image.Dither.FLOYDSTEINBERG)
+        total_w = sum(b.width for b in bands) + gap_px * (len(bands) - 1)
+        max_h = max(b.height for b in bands)
+        canvas = Image.new("L", (total_w, max_h), 255)
+        x = 0
+        for band in bands:
+            y = (max_h - band.height) // 2
+            canvas.paste(band, (x, y))
+            x += band.width + gap_px
 
-            width_bytes = (new_w + 7) // 8
-            padded_w = width_bytes * 8
-            if padded_w != new_w:
-                padded = Image.new("1", (padded_w, new_h), 1)
-                padded.paste(bw, (0, 0))
-                bw = padded
-
-            pixels = bw.load()
-            raster = bytearray()
-            for y in range(new_h):
-                for xb in range(width_bytes):
-                    b = 0
-                    for bit in range(8):
-                        x = xb * 8 + bit
-                        if pixels[x, y] == 0:
-                            b |= 1 << (7 - bit)
-                    raster.append(b)
-
-            xL = width_bytes & 0xFF
-            xH = (width_bytes >> 8) & 0xFF
-            yL = new_h & 0xFF
-            yH = (new_h >> 8) & 0xFF
-            image_cmd = GS + b"v0" + bytes([0, xL, xH, yL, yH]) + bytes(raster)
-            return align_bytes + image_cmd + b"\n" + LEFT
+        return self._raster_band_bytes(canvas, align_bytes)
 
     def _rendered_to_bytes(self, rendered: str) -> bytes:
         pattern = re.compile(r"\[\[\[IMG:([A-Za-z0-9+/=]+)\]\]\]")
@@ -218,14 +289,24 @@ class PrintService:
             except Exception as e:
                 raise ValueError(f"Invalid image token payload: {e}")
 
-            out.extend(
-                self._build_image_bytes(
-                    path=str(payload.get("path", "")),
-                    height_cm=float(payload.get("height_cm", 2.0)),
-                    align=str(payload.get("align", "center")),
-                    text=payload.get("text"),
+            if "row" in payload:
+                out.extend(
+                    self._build_image_row_bytes(
+                        items=payload["row"],
+                        height_cm=float(payload.get("height_cm", 0.5)),
+                        align=str(payload.get("align", "center")),
+                        gap_cm=float(payload.get("gap_cm", 0.4)),
+                    )
                 )
-            )
+            else:
+                out.extend(
+                    self._build_image_bytes(
+                        path=str(payload.get("path", "")),
+                        height_cm=float(payload.get("height_cm", 2.0)),
+                        align=str(payload.get("align", "center")),
+                        text=payload.get("text"),
+                    )
+                )
             pos = match.end()
 
         out.extend(rendered[pos:].encode("utf-8", errors="ignore"))
