@@ -1,4 +1,5 @@
 import socket
+import time
 import uuid
 import base64
 import json
@@ -12,6 +13,7 @@ from jinja2 import TemplateNotFound
 from PIL import Image, ImageDraw, ImageFont
 
 from app.core.config import settings
+from app.core.print_log import log_print_failure
 from app.models.printer import Printer
 from app.services.printer_service import printer_service
 
@@ -29,6 +31,18 @@ DOUBLE_WIDTH_ON = ESC + b"!\x20"
 DOUBLE_SIZE_ON = ESC + b"!\x30"  # Double height + width
 NORMAL_SIZE = ESC + b"!\x00"
 CUT = GS + b"V\x00"
+
+# Printer delivery retry policy
+PRINT_MAX_ATTEMPTS = 2  # one initial attempt + one retry
+PRINT_RETRY_DELAY_SECONDS = 1.0
+
+
+class PrintInputError(Exception):
+    """Request could not be rendered due to bad input/format (maps to HTTP 400)."""
+
+
+class PrinterFailureError(Exception):
+    """Rendered job could not be delivered to the printer (maps to HTTP 500)."""
 
 
 class PrintService:
@@ -331,7 +345,15 @@ class PrintService:
         out.extend(rendered[pos:].encode("utf-8", errors="ignore"))
         return bytes(out)
 
-    def send_to_printer(self, printer: Printer, content: bytes) -> bool:
+    def send_to_printer(
+        self,
+        printer: Printer,
+        content: bytes,
+        *,
+        job_id: Optional[str] = None,
+        template_name: Optional[str] = None,
+        metadata: Optional[dict] = None,
+    ) -> bool:
         """Send rendered text content to the thermal printer as ESC/POS.
 
         The content is treated as plain text (already formatted by Jinja2),
@@ -340,16 +362,36 @@ class PrintService:
         # Initialize printer and set to left alignment by default
         buffer = INIT + LEFT + content + b"\n\n\n" + CUT
 
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                sock.settimeout(10)
-                sock.connect((printer.host, printer.port))
-                sock.sendall(buffer)
-                print(f"[SUCCESS] Print sent to {printer.name} ({printer.host}:{printer.port})")
-                return True
-        except Exception as e:
-            print(f"[ERROR] Failed to print to {printer.name} ({printer.host}:{printer.port}): {e}")
-            return False
+        for attempt in range(1, PRINT_MAX_ATTEMPTS + 1):
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                    sock.settimeout(10)
+                    sock.connect((printer.host, printer.port))
+                    sock.sendall(buffer)
+                    print(f"[SUCCESS] Print sent to {printer.name} ({printer.host}:{printer.port})")
+                    return True
+            except Exception as e:
+                print(
+                    f"[ERROR] Failed to print to {printer.name} "
+                    f"({printer.host}:{printer.port}) on attempt "
+                    f"{attempt}/{PRINT_MAX_ATTEMPTS}: {e}"
+                )
+                log_print_failure(
+                    "printer_send_failed",
+                    "printer_failure",
+                    job_id=job_id,
+                    template_name=template_name,
+                    printer=printer,
+                    metadata=metadata,
+                    exc=e,
+                    attempt=attempt,
+                    max_attempts=PRINT_MAX_ATTEMPTS,
+                    final=(attempt == PRINT_MAX_ATTEMPTS),
+                )
+                if attempt < PRINT_MAX_ATTEMPTS:
+                    time.sleep(PRINT_RETRY_DELAY_SECONDS)
+
+        return False
 
     def initiate_print(
         self,
@@ -361,36 +403,83 @@ class PrintService:
         """
         Render template and optionally send to printer.
         Accepts either printer_id or printer_code. If both provided, printer_code takes precedence.
-        Returns: (success, message, job_id, html_preview, printer_id)
+        Returns on success: (success, message, job_id, html_preview, printer_id)
+
+        Raises:
+            PrintInputError: the request cannot be rendered (bad template, unknown
+                printer, or malformed content) -> HTTP 400.
+            PrinterFailureError: the rendered job could not be delivered to the
+                printer -> HTTP 500.
         """
         job_id = str(uuid.uuid4())
         try:
             rendered = self.render_template(template_name, metadata)
         except ValueError as e:
-            return False, str(e), None, None, None
+            log_print_failure(
+                "render_failed",
+                "input_error",
+                job_id=job_id,
+                template_name=template_name,
+                metadata=metadata,
+                exc=e,
+            )
+            raise PrintInputError(str(e))
 
         # Resolve printer by code or ID
         printer = None
         if printer_code:
             printer = printer_service.get_by_code(printer_code)
             if not printer:
-                return False, f"Printer not found with code: {printer_code}", job_id, rendered, None
+                log_print_failure(
+                    "printer_not_found",
+                    "input_error",
+                    job_id=job_id,
+                    template_name=template_name,
+                    metadata=metadata,
+                    printer_code=printer_code,
+                    error=f"Printer not found with code: {printer_code}",
+                )
+                raise PrintInputError(f"Printer not found with code: {printer_code}")
         elif printer_id:
             printer = printer_service.get(printer_id)
             if not printer:
-                return False, f"Printer not found: {printer_id}", job_id, rendered, None
-        
+                log_print_failure(
+                    "printer_not_found",
+                    "input_error",
+                    job_id=job_id,
+                    template_name=template_name,
+                    metadata=metadata,
+                    printer_id=printer_id,
+                    error=f"Printer not found: {printer_id}",
+                )
+                raise PrintInputError(f"Printer not found: {printer_id}")
+
         if not printer:
             return True, "Rendered successfully; no printer specified.", job_id, rendered, None
 
         try:
             rendered_bytes = self._rendered_to_bytes(rendered)
         except ValueError as e:
-            return False, str(e), job_id, rendered, printer.id
+            log_print_failure(
+                "image_build_failed",
+                "input_error",
+                job_id=job_id,
+                template_name=template_name,
+                printer=printer,
+                metadata=metadata,
+                exc=e,
+            )
+            raise PrintInputError(str(e))
 
-        if self.send_to_printer(printer, rendered_bytes):
+        if self.send_to_printer(
+            printer,
+            rendered_bytes,
+            job_id=job_id,
+            template_name=template_name,
+            metadata=metadata,
+        ):
             return True, "Print job sent to printer.", job_id, None, printer.id
-        return False, "Failed to send data to printer.", job_id, rendered, printer.id
+        raise PrinterFailureError("Failed to send data to printer.")
 
 
 print_service = PrintService()

@@ -14,7 +14,15 @@ class Settings(BaseSettings):
     discovery_timeout_seconds: float = 1.0
 
     sqlite_db_path: Path = Path(__file__).resolve().parent.parent.parent / "printers.sqlite3"
-    
+
+    # Failure log: one JSON object per line, rotated when it grows too large
+    print_log_path: Path = (
+        Path(__file__).resolve().parent.parent.parent / "logs" / "print_failures.log"
+    )
+    print_log_max_bytes: int = 5 * 1024 * 1024
+    print_log_backup_count: int = 5
+    print_log_include_metadata: bool = True
+
     # CORS Configuration - Configure in code, not via environment variables
     cors_origins: List[str] = ["*"]  # Allow all origins by default
     cors_credentials: bool = True
