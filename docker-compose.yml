@@ -10,6 +10,7 @@ services:
     environment:
       PRINTER_SQLITE_DB_PATH: "/data/printers.sqlite3"
       PRINTER_PRINTERS_CONFIG_PATH: "/app/printers.yaml"
+      PRINTER_PRINT_LOG_PATH: "/data/logs/print_failures.log"
     volumes:
       - printer_data:/data
       - ./printers.yaml:/app/printers.yaml:ro
