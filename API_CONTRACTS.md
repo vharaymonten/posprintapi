@@ -636,6 +636,80 @@ If omitted from `metadata`, the service fills:
 
 ---
 
+## 7. Move Item Template (`move_item.txt`)
+
+Printed when an order — or part of it — is moved from one table to another. One
+receipt represents one move transaction (single source table → single target
+table). To move items to several tables, send one request per target table.
+
+### Contract
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `move_no` | string | No | Move transaction reference; printed when present |
+| `order_no` | string | Yes | Source order number/ID |
+| `to_order_no` | string | No | Target order number, when the move creates/joins a different order |
+| `from_table_no` | string | Yes | Source table number (printed **bold + double-size**) |
+| `to_table_no` | string | Yes | Destination table number (printed **bold + double-size**) |
+| `from_pax` | integer | No | Guest count remaining on the source table |
+| `to_pax` | integer | No | Guest count on the destination table |
+| `customer_name` | string | Yes | Customer name |
+| `cashier_name` | string | No | Cashier name printed on ticket |
+| `input_by` | string | No | Username/operator who input the move |
+| `moved_by` | string | No | Waiter/staff who physically moved the order |
+| `date` | string | No | Print date (YYYY-MM-DD). Auto-generated if omitted |
+| `time` | string | No | Print time (HH:MM:SS). Auto-generated if omitted |
+| `items` | array | Yes | Items being moved. For a full-order move, send the complete item list |
+| `items[].name` | string | Yes | Item name (displayed in **bold + double-size**) |
+| `items[].qty` | integer | Yes | Quantity moved (may be less than the ordered qty for a partial move) |
+| `items[].note` | string | No | Special notes for this item |
+| `move_reason` | string | No | Why the order was moved; section omitted when empty |
+| `move_note` | string | No | Free-text note for staff; section omitted when empty |
+| `move_all` | integer | No | Set to `1` to print the bold **FULL ORDER MOVE** banner |
+| `cancel_move` | integer | No | Set to `1` to print the bold **MOVE CANCELLED** banner (reverting a move) |
+| `reprint_count` | integer | No | Reprint sequence number; when > 0 a bold **REPRINT N** banner is printed |
+
+Notes:
+
+- `move_all` is a display flag only — `items` is still required and is what gets
+  printed. Set it to `1` when the whole order moved so staff see it at a glance.
+- `cancel_move` and `move_all` are independent and may both be set (a cancelled
+  full-order move).
+- Print to the checker/waiter printer, and additionally to `KITCHEN`/`BAR` when
+  those stations need to know the table changed for in-progress items.
+
+### Example Request
+
+```json
+{
+  "template_name": "move_item.txt",
+  "printer_code": "CHECKER",
+  "metadata": {
+    "move_no": "MV-20260221-004",
+    "order_no": "ORD-20260221-001",
+    "to_order_no": "ORD-20260221-019",
+    "from_table_no": "7",
+    "to_table_no": "12",
+    "from_pax": 4,
+    "to_pax": 6,
+    "customer_name": "Budi Santoso",
+    "cashier_name": "Siti",
+    "input_by": "system",
+    "moved_by": "Andi",
+    "items": [
+      {"name": "Nasi Goreng Special", "qty": 2, "note": "Pedas sedang"},
+      {"name": "Es Teh Manis", "qty": 2}
+    ],
+    "move_reason": "Guest requested a bigger table",
+    "move_note": "Merged with existing order on table 12",
+    "move_all": 1,
+    "reprint_count": 0
+  }
+}
+```
+
+---
+
 ## Response Format
 
 ### Success Response

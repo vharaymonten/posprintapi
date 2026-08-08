@@ -8,6 +8,14 @@ FastAPI service to connect to **thermal printers** on the local network for rest
 - **Printer registry**: Register printers by host and port, then target them by ID.
 - **Print command**: `POST /api/v1/initiate-print` with `template_name` and `metadata`; Jinja2 fills the template, the HTML is converted to **ESC/POS**, and the bytes are sent to the thermal printer.
 
+## Documentation
+
+| Document | Covers |
+|---|---|
+| [docs/PRINTER.md](docs/PRINTER.md) | How we talk to POS printers: ESC/POS over raw TCP, printer configuration, and failure diagnosis |
+| [API_CONTRACTS.md](API_CONTRACTS.md) | Request/response payloads per template |
+| [CORS_CONFIG.md](CORS_CONFIG.md) | CORS configuration |
+
 ## Setup
 
 ```bash

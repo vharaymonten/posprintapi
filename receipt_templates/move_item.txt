@@ -1,0 +1,77 @@
+{#
+ Jinja2 text template for move-item receipt (40-column).
+ Printed when orders/items are moved from one table to another.
+ Fields expected in context:
+   move_no (optional), order_no, to_order_no (optional),
+   from_table_no, to_table_no, from_pax (optional), to_pax (optional),
+   customer_name, cashier_name, input_by, moved_by (optional),
+   items: list of { name, qty, note },
+   move_reason (optional free text), move_note (optional free text).
+   move_all (optional, default 0): set to 1 to show FULL ORDER MOVE banner.
+   cancel_move (optional, default 0): set to 1 to show MOVE CANCELLED banner.
+   reprint_count (optional, default 0): set to N to show bold REPRINT N banner.
+#}
+{% set w = 40 %}
+{% set move_all = move_all | default(0) %}
+{% set cancel_move = cancel_move | default(0) %}
+
+{{ 'MOVE ITEM'|center(w) }}
+{% if cancel_move %}
+{{ DOUBLE_SIZE_ON }}{{ BOLD_ON }}{{ '** MOVE CANCELLED **'|center(w // 2) }}{{ BOLD_OFF }}{{ NORMAL_SIZE }}
+{% endif %}
+{% if move_all %}
+{{ BOLD_ON }}{{ '** FULL ORDER MOVE **'|center(w) }}{{ BOLD_OFF }}
+{% endif %}
+{% if reprint_count is defined and reprint_count %}
+{{ BOLD_ON }}{{ ('REPRINT ' + (reprint_count|string))|upper|center(w) }}{{ BOLD_OFF }}
+{% endif %}
+{{ '-' * w }}
+{% if move_no %}
+Move No  : {{ move_no }}
+{% endif %}
+Order No : {{ order_no }}
+{% if to_order_no %}
+New Order: {{ to_order_no }}
+{% endif %}
+Customer : {{ customer_name }}
+Cashier  : {{ cashier_name }}
+Input By : {{ input_by }}
+{% if moved_by %}
+Moved By : {{ moved_by }}
+{% endif %}
+Date     : {{ date }}
+Time     : {{ time }}
+{{ '-' * w }}
+
+{{ DOUBLE_SIZE_ON }}{{ BOLD_ON }}{{ ('FROM ' + (from_table_no|string))|center(w // 2) }}{{ BOLD_OFF }}{{ NORMAL_SIZE }}
+{% if from_pax is defined and from_pax %}
+{{ ('Pax : ' + (from_pax|string))|center(w) }}
+{% endif %}
+{{ 'v v v'|center(w) }}
+{{ DOUBLE_SIZE_ON }}{{ BOLD_ON }}{{ ('TO ' + (to_table_no|string))|center(w // 2) }}{{ BOLD_OFF }}{{ NORMAL_SIZE }}
+{% if to_pax is defined and to_pax %}
+{{ ('Pax : ' + (to_pax|string))|center(w) }}
+{% endif %}
+
+{{ '-' * w }}
+--- Moved Items ---
+
+{% for item in items %}
+{{ DOUBLE_SIZE_ON }}{{ BOLD_ON }}{{ item.name|upper|truncate(w) }}{{ BOLD_OFF }}{{ NORMAL_SIZE }}
+{{ BOLD_ON }}Qty : {{ item.qty }}{{ BOLD_OFF }}
+{% if item.note %}
+Note: {{ item.note|truncate(w - 6) }}
+{% endif %}
+
+{% endfor %}
+{{ '-' * w }}
+{% if move_reason %}
+--- Move Reason ---
+{{ move_reason }}
+
+{% endif %}
+{% if move_note %}
+--- Move Note ---
+{{ move_note }}
+
+{% endif %}
