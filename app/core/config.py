@@ -23,6 +23,29 @@ class Settings(BaseSettings):
     print_log_backup_count: int = 5
     print_log_include_metadata: bool = True
 
+    # --- Print dispatch ---
+    # Jobs accepted per printer per sliding window. A thermal printer needs
+    # roughly 0.5-1s per receipt, so this is a burst ceiling rather than a
+    # sustained throughput target -- the serialized per-printer worker is what
+    # actually paces delivery.
+    print_rate_limit: int = 4
+    print_rate_window_seconds: float = 1.0
+    # How long a caller waits for its receipt before getting 503 + Retry-After.
+    print_wait_timeout_seconds: float = 5.0
+    # Backlog per printer before the API sheds load with a 503.
+    # Keep this at roughly print_rate_limit * print_wait_timeout_seconds. A
+    # deeper queue does not buy throughput: a job queued behind more than that
+    # cannot be reached before its caller's wait budget expires, so it would be
+    # abandoned anyway -- and rejecting it on arrival returns the 503 in
+    # milliseconds instead of making the POS wait the full timeout first.
+    print_max_queue_depth: int = 20
+    # Socket timeouts. A printer on the LAN answers in milliseconds; the old
+    # 10s connect timeout only served to pin a thread to a dead printer.
+    print_connect_timeout_seconds: float = 3.0
+    print_send_timeout_seconds: float = 5.0
+    print_retry_delay_seconds: float = 0.5
+    print_max_attempts: int = 2
+
     # CORS Configuration - Configure in code, not via environment variables
     cors_origins: List[str] = ["*"]  # Allow all origins by default
     cors_credentials: bool = True

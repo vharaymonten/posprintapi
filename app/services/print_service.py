@@ -32,9 +32,13 @@ DOUBLE_SIZE_ON = ESC + b"!\x30"  # Double height + width
 NORMAL_SIZE = ESC + b"!\x00"
 CUT = GS + b"V\x00"
 
-# Printer delivery retry policy
-PRINT_MAX_ATTEMPTS = 2  # one initial attempt + one retry
-PRINT_RETRY_DELAY_SECONDS = 1.0
+# Maps each byte to its bitwise complement; used to flip PIL's "bit set = white"
+# packing into ESC/POS's "bit set = black dot".
+_INVERT_BYTE = bytes(255 - i for i in range(256))
+
+# Printer delivery retry policy (tunable via PRINTER_* env vars)
+PRINT_MAX_ATTEMPTS = settings.print_max_attempts
+PRINT_RETRY_DELAY_SECONDS = settings.print_retry_delay_seconds
 
 
 class PrintInputError(Exception):
@@ -241,16 +245,11 @@ class PrintService:
             padded.paste(bw, (0, 0))
             bw = padded
 
-        pixels = bw.load()
-        raster = bytearray()
-        for y in range(new_h):
-            for xb in range(width_bytes):
-                b = 0
-                for bit in range(8):
-                    x = xb * 8 + bit
-                    if pixels[x, y] == 0:
-                        b |= 1 << (7 - bit)
-                raster.append(b)
+        # PIL packs mode "1" as one bit per pixel, MSB-first, rows padded to a
+        # byte boundary -- exactly the GS v 0 raster layout. It sets a bit for
+        # *white*, while ESC/POS sets a bit for a *black dot*, so invert. The
+        # padding added above is white, so its bits invert to "no dot".
+        raster = bw.tobytes().translate(_INVERT_BYTE)
 
         xL = width_bytes & 0xFF
         xH = (width_bytes >> 8) & 0xFF
@@ -365,8 +364,11 @@ class PrintService:
         for attempt in range(1, PRINT_MAX_ATTEMPTS + 1):
             try:
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                    sock.settimeout(10)
+                    # Separate budgets: a LAN printer connects in milliseconds,
+                    # but the write can legitimately block while paper feeds.
+                    sock.settimeout(settings.print_connect_timeout_seconds)
                     sock.connect((printer.host, printer.port))
+                    sock.settimeout(settings.print_send_timeout_seconds)
                     sock.sendall(buffer)
                     print(f"[SUCCESS] Print sent to {printer.name} ({printer.host}:{printer.port})")
                     return True
@@ -393,25 +395,27 @@ class PrintService:
 
         return False
 
-    def initiate_print(
+    def prepare_print(
         self,
         template_name: str,
         metadata: dict,
         printer_id: Optional[str] = None,
         printer_code: Optional[str] = None,
-    ) -> tuple[bool, str, Optional[str], Optional[str], Optional[str]]:
-        """
-        Render template and optionally send to printer.
-        Accepts either printer_id or printer_code. If both provided, printer_code takes precedence.
-        Returns on success: (success, message, job_id, html_preview, printer_id)
+        job_id: Optional[str] = None,
+    ) -> tuple[str, Optional[Printer], Optional[bytes], Optional[str]]:
+        """Render a job and resolve its printer without touching the network.
+
+        This is everything that can fail on *input*, split out from delivery so
+        the API can validate and reject a bad request immediately instead of
+        burning a queue slot on it. Returns
+        ``(job_id, printer, rendered_bytes, preview)``; ``printer`` is None when
+        no printer was requested, in which case ``preview`` holds the render.
 
         Raises:
-            PrintInputError: the request cannot be rendered (bad template, unknown
-                printer, or malformed content) -> HTTP 400.
-            PrinterFailureError: the rendered job could not be delivered to the
-                printer -> HTTP 500.
+            PrintInputError: bad template, unknown printer, or malformed content
+                -> HTTP 400.
         """
-        job_id = str(uuid.uuid4())
+        job_id = job_id or str(uuid.uuid4())
         try:
             rendered = self.render_template(template_name, metadata)
         except ValueError as e:
@@ -428,7 +432,7 @@ class PrintService:
         # Resolve printer by code or ID
         printer = None
         if printer_code:
-            printer = printer_service.get_by_code(printer_code)
+            printer = printer_service.get_by_code(printer_code, check_availability=False)
             if not printer:
                 log_print_failure(
                     "printer_not_found",
@@ -441,7 +445,7 @@ class PrintService:
                 )
                 raise PrintInputError(f"Printer not found with code: {printer_code}")
         elif printer_id:
-            printer = printer_service.get(printer_id)
+            printer = printer_service.get(printer_id, check_availability=False)
             if not printer:
                 log_print_failure(
                     "printer_not_found",
@@ -455,7 +459,7 @@ class PrintService:
                 raise PrintInputError(f"Printer not found: {printer_id}")
 
         if not printer:
-            return True, "Rendered successfully; no printer specified.", job_id, rendered, None
+            return job_id, None, None, rendered
 
         try:
             rendered_bytes = self._rendered_to_bytes(rendered)
@@ -470,6 +474,31 @@ class PrintService:
                 exc=e,
             )
             raise PrintInputError(str(e))
+
+        return job_id, printer, rendered_bytes, None
+
+    def initiate_print(
+        self,
+        template_name: str,
+        metadata: dict,
+        printer_id: Optional[str] = None,
+        printer_code: Optional[str] = None,
+    ) -> tuple[bool, str, Optional[str], Optional[str], Optional[str]]:
+        """Render and synchronously deliver a job, bypassing the dispatcher.
+
+        Retained for scripts and tests that drive the service directly. The API
+        path goes through :class:`~app.core.print_queue.PrintDispatcher` instead,
+        so that concurrent jobs for one printer are serialized.
+
+        Raises:
+            PrintInputError: the request cannot be rendered -> HTTP 400.
+            PrinterFailureError: the job could not be delivered -> HTTP 500.
+        """
+        job_id, printer, rendered_bytes, preview = self.prepare_print(
+            template_name, metadata, printer_id=printer_id, printer_code=printer_code
+        )
+        if printer is None:
+            return True, "Rendered successfully; no printer specified.", job_id, preview, None
 
         if self.send_to_printer(
             printer,

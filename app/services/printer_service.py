@@ -99,7 +99,7 @@ class PrinterService:
             port=data.port,
         )
 
-    def get(self, printer_id: str) -> Optional[Printer]:
+    def get(self, printer_id: str, *, check_availability: bool = True) -> Optional[Printer]:
         with sqlite_conn() as conn:
             row = fetch_one_dict(conn, "SELECT * FROM printers WHERE id = ?", (printer_id,))
         if not row:
@@ -111,11 +111,20 @@ class PrinterService:
             host=row["host"],
             port=int(row["port"]),
         )
-        printer.is_available = self.check_reachable(printer.host, printer.port)
+        if check_availability:
+            printer.is_available = self.check_reachable(printer.host, printer.port)
         return printer
 
-    def get_by_code(self, printer_code: str) -> Optional[Printer]:
-        """Get a printer by its printer_code."""
+    def get_by_code(
+        self, printer_code: str, *, check_availability: bool = True
+    ) -> Optional[Printer]:
+        """Get a printer by its printer_code.
+
+        Pass ``check_availability=False`` on the print path. The probe opens and
+        drops a TCP connection to the printer, which both costs a round trip and
+        competes with the print job for the printer's single connection slot --
+        the send itself is the only reachability check that matters there.
+        """
         with sqlite_conn() as conn:
             row = fetch_one_dict(conn, "SELECT * FROM printers WHERE printer_code = ?", (printer_code,))
         if not row:
@@ -127,7 +136,8 @@ class PrinterService:
             host=row["host"],
             port=int(row["port"]),
         )
-        printer.is_available = self.check_reachable(printer.host, printer.port)
+        if check_availability:
+            printer.is_available = self.check_reachable(printer.host, printer.port)
         return printer
 
     def list_all(self) -> list[Printer]:

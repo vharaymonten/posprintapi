@@ -6,13 +6,22 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1 import api_router
 from app.api.ui import ui_router
+from app.core import print_queue
 from app.core.config import settings
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings.templates_dir.mkdir(parents=True, exist_ok=True)
-    yield
+
+    # The dispatcher owns asyncio queues and tasks, so it must be built inside
+    # the running loop rather than at import time.
+    print_queue.dispatcher = print_queue.build_dispatcher()
+    try:
+        yield
+    finally:
+        await print_queue.dispatcher.aclose()
+        print_queue.dispatcher = None
 
 
 app = FastAPI(

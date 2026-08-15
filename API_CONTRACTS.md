@@ -748,6 +748,60 @@ Notes:
 }
 ```
 
+### Status Codes
+
+| Code | Meaning | Caller should |
+|------|---------|---------------|
+| `200` | Bytes were accepted by the printer | Nothing |
+| `400` | Bad template, unknown printer, or malformed metadata | Fix the request; retrying will not help |
+| `500` | Printer rejected the job or was unreachable after retries | Alert staff; the printer is likely offline or out of paper |
+| `503` | Printer backlog is full, or the job did not reach the printer within the wait budget | Retry after the `Retry-After` header (seconds) |
+
+A `503` is **safe to retry**: it is only returned when the job is still queued and
+can be dropped before reaching the printer, so it will not produce a duplicate
+receipt. Once a job starts sending, the request waits for the true outcome and
+answers `200` or `500` rather than `503`.
+
+---
+
+## Print Dispatch and Rate Limiting
+
+A thermal printer accepts **one TCP connection at a time** and needs roughly
+0.5-1s per receipt. The API therefore gives each printer its own bounded queue
+and a single worker that delivers jobs one after another. Different printers
+drain in parallel, so total throughput scales with the number of printers, not
+with request concurrency against one of them.
+
+A sliding-window limiter paces each worker. The window is a true sliding window
+(trailing timestamps, monotonic clock), so it cannot pass 2x the limit across a
+boundary the way a fixed window can.
+
+`GET /api/v1/print-queue` reports the current backlog per printer id:
+
+```json
+{ "printer-uuid": { "queued": 3, "max_depth": 20 } }
+```
+
+### Tuning
+
+All knobs are environment variables with the `PRINTER_` prefix:
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `PRINTER_PRINT_RATE_LIMIT` | `4` | Jobs granted per printer per window |
+| `PRINTER_PRINT_RATE_WINDOW_SECONDS` | `1.0` | Sliding window length |
+| `PRINTER_PRINT_MAX_QUEUE_DEPTH` | `20` | Backlog per printer before shedding with 503 |
+| `PRINTER_PRINT_WAIT_TIMEOUT_SECONDS` | `5.0` | How long a caller waits before a 503 |
+| `PRINTER_PRINT_CONNECT_TIMEOUT_SECONDS` | `3.0` | TCP connect budget |
+| `PRINTER_PRINT_SEND_TIMEOUT_SECONDS` | `5.0` | Write budget once connected |
+| `PRINTER_PRINT_MAX_ATTEMPTS` | `2` | Delivery attempts per job |
+| `PRINTER_PRINT_RETRY_DELAY_SECONDS` | `0.5` | Pause between attempts |
+
+Keep `PRINT_MAX_QUEUE_DEPTH` near `PRINT_RATE_LIMIT * PRINT_WAIT_TIMEOUT_SECONDS`.
+A deeper queue buys no throughput — a job queued beyond that point cannot be
+reached before its caller's wait budget expires — and rejecting on arrival
+returns the 503 in milliseconds instead of after the full timeout.
+
 ---
 
 ## Notes
