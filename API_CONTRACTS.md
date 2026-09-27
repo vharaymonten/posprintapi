@@ -435,6 +435,53 @@ If omitted from `metadata`, the service fills:
 
 ---
 
+## 4b. Order Invoice Template (`order_invoice.txt`)
+
+Printed by the waiter for the customer **before payment**. It renders the exact `closebill.txt`
+layout, then a footer with **Print By** and a timestamp, and always ends with a bold,
+double-size **NOT PAID** banner. The caller does not need to set a flag for the banner.
+
+### Contract
+
+Accepts every field of the [CloseBill contract](#4-closebill-template-closebilltxt), plus:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `printby` | string | Yes | Name of the waiter printing the invoice, shown as `Print By : ...` in the footer |
+| `timestamp` | string | No | Printed footer timestamp; if omitted, auto-generated in UTC+7 |
+
+`payments`, `total_payment` and `change` are ignored. An unpaid order never prints payment rows.
+
+### Example Request
+
+```json
+{
+  "template_name": "order_invoice.txt",
+  "printer_code": "BAR",
+  "metadata": {
+    "store_name": "ANEKA Restoran",
+    "bill_no": "BILL-2026-0221-0089",
+    "table_no": "12",
+    "pax_count": 4,
+    "customer_name": "Budi Santoso",
+    "cashier_name": "Siti",
+    "input_by": "system",
+    "items": [
+      {"name": "Nasi Goreng Special", "qty": 2, "price": "Rp 90.000"},
+      {"name": "Es Teh Manis", "qty": 3, "price": "Rp 15.000"}
+    ],
+    "subtotal": "Rp 105.000",
+    "service_charge_amount": "Rp 5.250",
+    "tax": "Rp 10.500",
+    "total": "Rp 120.750",
+    "tagline": "Terima Kasih",
+    "printby": "ANDI"
+  }
+}
+```
+
+---
+
 ## 5. Invoice Template (`invoice.txt`)
 
 ### Contract

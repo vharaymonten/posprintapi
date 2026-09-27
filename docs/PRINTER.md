@@ -409,7 +409,8 @@ Plain-text ESC/POS templates live in `receipt_templates/`:
 
 ```
 bar.txt      checker.txt      close_cashier.txt   closebill.txt   invoice.txt
-kitchen.txt  kitchen_checker.txt   receipt.txt    table_checker.txt
+kitchen.txt  kitchen_checker.txt   move_item.txt  order_invoice.txt
+receipt.txt  table_checker.txt
 ```
 
 `template_name` is resolved by `render_template` through a `ChoiceLoader` that searches
