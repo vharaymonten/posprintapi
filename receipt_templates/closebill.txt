@@ -20,7 +20,9 @@ Table    : {{ table_no }}
 Pax      : {{ pax_count }}
 Customer : {{ customer_name }}
 Cashier  : {{ cashier_name }}
+{% if input_by or not hide_empty_input_by %}
 Input By : {{ input_by }}
+{% endif %}
 {{ '-' * w }}
 {% for item in items %}
 {{ BOLD_ON }}{{ item.name|upper|truncate(w) }}{{ BOLD_OFF }}

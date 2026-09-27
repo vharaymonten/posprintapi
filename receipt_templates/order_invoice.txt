@@ -1,20 +1,24 @@
 {#
  Order Invoice Template for 40-column thermal printers
- Printed by the waiter for the customer before payment. Reuses the close bill
- layout and always ends with a bold NOT PAID banner.
+ Printed for the customer before payment. Reuses the close bill layout and
+ always ends with a bold NOT PAID banner.
 
  Accepts every closebill.txt field, plus:
-   printby    — name of the person printing, shown as "Print By" in the footer
+   print_by   — logged-in user who printed the invoice, shown as "Print By"
+                in the footer
    timestamp  — optional footer timestamp; auto-generated in UTC+7 if omitted
 
+ input_by is the user who entered the order and may differ from print_by;
+ its "Input By" line is hidden when it is missing or empty.
  Payment rows are suppressed: an unpaid order has no payments to show.
 #}
 {% set w = 40 %}
 {% set payments = none %}
+{% set hide_empty_input_by = true %}
 {% include 'closebill.txt' %}
 
 {{ '-' * w }}
-Print By : {{ printby }}
+Print By : {{ print_by }}
 {{ timestamp }}
 {{ '-' * w }}
 {{ DOUBLE_SIZE_ON }}{{ BOLD_ON }}{{ '** NOT PAID **'|center(w // 2) }}{{ BOLD_OFF }}{{ NORMAL_SIZE }}
