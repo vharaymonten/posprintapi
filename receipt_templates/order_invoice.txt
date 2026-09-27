@@ -22,3 +22,6 @@ Print By : {{ print_by }}
 {{ timestamp }}
 {{ '-' * w }}
 {{ DOUBLE_SIZE_ON }}{{ BOLD_ON }}{{ '** NOT PAID **'|center(w // 2) }}{{ BOLD_OFF }}{{ NORMAL_SIZE }}
+
+
+
