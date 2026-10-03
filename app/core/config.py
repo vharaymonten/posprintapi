@@ -23,6 +23,16 @@ class Settings(BaseSettings):
     print_log_backup_count: int = 5
     print_log_include_metadata: bool = True
 
+    # Error log: every request that ends in a 4xx/5xx, one JSON object per line
+    # with the traceback and HTTP payload. Written off the event loop.
+    error_log_path: Path = (
+        Path(__file__).resolve().parent.parent.parent / "logs" / "errors.log"
+    )
+    error_log_max_bytes: int = 5 * 1024 * 1024
+    error_log_backup_count: int = 5
+    # Request body bytes kept per entry; 0 disables body capture.
+    error_log_max_body_bytes: int = 16 * 1024
+
     # --- Print dispatch ---
     # Jobs accepted per printer per sliding window. A thermal printer needs
     # roughly 0.5-1s per receipt, so this is a burst ceiling rather than a

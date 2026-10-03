@@ -11,6 +11,7 @@ services:
       PRINTER_SQLITE_DB_PATH: "/data/printers.sqlite3"
       PRINTER_PRINTERS_CONFIG_PATH: "/app/printers.yaml"
       PRINTER_PRINT_LOG_PATH: "/data/logs/print_failures.log"
+      PRINTER_ERROR_LOG_PATH: "/data/logs/errors.log"
       # Print dispatch: per-printer sliding-window pacing and backlog.
       # Keep queue depth near rate_limit * wait_timeout -- see API_CONTRACTS.md.
       PRINTER_PRINT_RATE_LIMIT: "4"

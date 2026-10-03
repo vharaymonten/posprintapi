@@ -6,12 +6,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1 import api_router
 from app.api.ui import ui_router
-from app.core import print_queue
+from app.core import error_log, print_queue
 from app.core.config import settings
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    error_log.start()
     settings.templates_dir.mkdir(parents=True, exist_ok=True)
 
     # The dispatcher owns asyncio queues and tasks, so it must be built inside
@@ -22,6 +23,8 @@ async def lifespan(app: FastAPI):
     finally:
         await print_queue.dispatcher.aclose()
         print_queue.dispatcher = None
+        # Last, so anything logged while draining the print queue is flushed.
+        error_log.stop()
 
 
 app = FastAPI(
@@ -39,6 +42,9 @@ app.add_middleware(
     allow_methods=settings.cors_methods,
     allow_headers=settings.cors_headers,
 )
+
+# JSON error log with traceback and request payload for every 4xx/5xx
+error_log.install(app)
 
 app.include_router(api_router)
 app.include_router(ui_router)

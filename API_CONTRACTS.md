@@ -447,8 +447,11 @@ Accepts every field of the [CloseBill contract](#4-closebill-template-closebillt
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `printby` | string | Yes | Name of the waiter printing the invoice, shown as `Print By : ...` in the footer |
+| `print_by` | string | Yes | Logged-in user who printed the invoice, shown as `Print By : ...` in the footer |
 | `timestamp` | string | No | Printed footer timestamp; if omitted, auto-generated in UTC+7 |
+
+`input_by` is the user who entered the order and can differ from `print_by`. Unlike `closebill.txt`,
+the `Input By :` line is hidden when `input_by` is missing or empty.
 
 `payments`, `total_payment` and `change` are ignored. An unpaid order never prints payment rows.
 
@@ -465,7 +468,7 @@ Accepts every field of the [CloseBill contract](#4-closebill-template-closebillt
     "pax_count": 4,
     "customer_name": "Budi Santoso",
     "cashier_name": "Siti",
-    "input_by": "system",
+    "input_by": "ANDI",
     "items": [
       {"name": "Nasi Goreng Special", "qty": 2, "price": "Rp 90.000"},
       {"name": "Es Teh Manis", "qty": 3, "price": "Rp 15.000"}
@@ -475,7 +478,7 @@ Accepts every field of the [CloseBill contract](#4-closebill-template-closebillt
     "tax": "Rp 10.500",
     "total": "Rp 120.750",
     "tagline": "Terima Kasih",
-    "printby": "ANDI"
+    "print_by": "SITI"
   }
 }
 ```
