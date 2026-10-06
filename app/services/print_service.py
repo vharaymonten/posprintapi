@@ -138,7 +138,7 @@ class PrintService:
     def _image_row_token(
         self,
         items,
-        height_cm: float = 0.5,
+        height_cm: float = 0.3,
         align: str = "center",
         gap_cm: float = 0.4,
     ) -> str:
@@ -166,19 +166,27 @@ class PrintService:
         return f"[[[IMG:{payload}]]]"
 
     def _compose_logo_text(
-        self, logo: Image.Image, text: str, font_px: Optional[int] = None
+        self,
+        logo: Image.Image,
+        text: str,
+        font_px: Optional[int] = None,
+        stroke_width: Optional[int] = None,
     ) -> Image.Image:
         """Paste *text* to the right of *logo*, vertically centered, on one band.
 
-        The text is rendered with a stroke so it stays large and bold even after
-        the row is scaled down to the print head width. *font_px* overrides the
-        text size (defaults to ~1.2x the logo height) so the row builder can use
-        bigger text alongside smaller icons.
+        *font_px* overrides the text size (defaults to ~1.2x the logo height).
+        *stroke_width* defaults to a faux-bold weight that survives the band
+        being scaled down to the print head; callers that already render at
+        print size pass 0, since the extra weight fills in small letters.
         """
         h = logo.height
         font_size = font_px if font_px else max(20, int(round(h * 1.2)))
         font = ImageFont.load_default(size=font_size)
-        stroke = max(1, int(round(font_size * 0.08)))  # simulate bold weight
+        stroke = (
+            stroke_width
+            if stroke_width is not None
+            else max(1, int(round(font_size * 0.08)))  # simulate bold weight
+        )
         gap = max(4, int(round(h * 0.25)))
         measure = ImageDraw.Draw(Image.new("L", (1, 1)))
         bbox = measure.textbbox((0, 0), text, font=font, stroke_width=stroke)
@@ -194,14 +202,11 @@ class PrintService:
         draw.text((tx, ty), text, font=font, fill=0, stroke_width=stroke, stroke_fill=0)
         return canvas
 
-    def _align_bytes(self, align: str) -> bytes:
+    def _normalize_align(self, align: str) -> str:
         align_normalized = (align or "center").strip().lower()
-        if align_normalized == "center":
-            return CENTER
-        elif align_normalized == "left":
-            return LEFT
-        else:
+        if align_normalized not in ("center", "left"):
             raise ValueError(f"Unsupported image align: {align}")
+        return align_normalized
 
     def _load_logo_gray(self, path: str, height_px: int) -> Image.Image:
         """Open *path*, flatten transparency, and resize to *height_px* tall."""
@@ -226,17 +231,32 @@ class PrintService:
             logo_w = max(1, int(round(orig_w * (height_px / orig_h))))
             return img.resize((logo_w, height_px), Image.Resampling.LANCZOS)
 
-    def _raster_band_bytes(self, img: Image.Image, align_bytes: bytes) -> bytes:
-        """Scale *img* to fit the 58mm print head and emit an ESC/POS raster."""
-        new_w, new_h = img.size
-        max_width_dots = 384  # 58mm thermal head printable width @203dpi
-        if new_w > max_width_dots:
-            scale = max_width_dots / new_w
-            new_w = max(1, int(round(new_w * scale)))
-            new_h = max(1, int(round(new_h * scale)))
-            img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+    def _raster_band_bytes(
+        self, img: Image.Image, align: str, *, dither: bool = True
+    ) -> bytes:
+        """Fit *img* to the receipt text grid and emit an ESC/POS raster.
 
-        bw = img.convert("1", dither=Image.Dither.FLOYDSTEINBERG)
+        A centered image is padded to the full grid width and printed from the
+        left margin, so it lines up with ``|center(w)`` text whatever the paper
+        width. *dither* suits photographic logos; line art (icons, text) is
+        thresholded instead, because dithering its anti-aliased edges prints as
+        speckle.
+        """
+        grid_w = settings.receipt_width_dots
+        if img.width > grid_w:
+            scaled_h = max(1, int(round(img.height * grid_w / img.width)))
+            img = img.resize((grid_w, scaled_h), Image.Resampling.LANCZOS)
+        if align == "center" and img.width < grid_w:
+            canvas = Image.new("L", (grid_w, img.height), 255)
+            canvas.paste(img, ((grid_w - img.width) // 2, 0))
+            img = canvas
+        new_w, new_h = img.size
+
+        if dither:
+            bw = img.convert("1", dither=Image.Dither.FLOYDSTEINBERG)
+        else:
+            # A light threshold keeps anti-aliased edges as dots, so strokes stay solid.
+            bw = img.point(lambda v: 255 if v >= 160 else 0, "1")
 
         width_bytes = (new_w + 7) // 8
         padded_w = width_bytes * 8
@@ -256,12 +276,12 @@ class PrintService:
         yL = new_h & 0xFF
         yH = (new_h >> 8) & 0xFF
         image_cmd = GS + b"v0" + bytes([0, xL, xH, yL, yH]) + bytes(raster)
-        return align_bytes + image_cmd + b"\n" + LEFT
+        return LEFT + image_cmd + b"\n"
 
     def _build_image_bytes(
         self, path: str, height_cm: float, align: str, text: Optional[str] = None
     ) -> bytes:
-        align_bytes = self._align_bytes(align)
+        align = self._normalize_align(align)
         dpi = 203
         height_px = max(1, int(round((float(height_cm) / 2.54) * dpi)))
 
@@ -269,35 +289,47 @@ class PrintService:
         if text:
             img = self._compose_logo_text(img, text)
 
-        return self._raster_band_bytes(img, align_bytes)
+        return self._raster_band_bytes(img, align)
 
     def _build_image_row_bytes(
         self, items, height_cm: float, align: str, gap_cm: float = 0.4
     ) -> bytes:
-        """Render several logo+text pairs side by side on one raster band."""
-        align_bytes = self._align_bytes(align)
+        """Render several icon+text pairs side by side on one raster band.
+
+        The band is drawn at the printer's own resolution: *height_cm* is the
+        printed icon height and the text starts just under it. If the row is
+        wider than the receipt grid, the font steps down until it fits, rather
+        than shrinking the finished bitmap -- which smears small text into
+        unreadable blobs and shrinks the icons to a few dots.
+        """
+        align = self._normalize_align(align)
         dpi = 203
-        height_px = max(1, int(round((float(height_cm) / 2.54) * dpi)))
+        icon_px = max(1, int(round((float(height_cm) / 2.54) * dpi)))
         gap_px = max(0, int(round((float(gap_cm) / 2.54) * dpi)))
+        grid_w = settings.receipt_width_dots
+        min_font_px = 16  # below this, thermal-printed text stops being legible
 
-        # On one 58mm row the band is shrunk to fit the head, so render the
-        # icons a bit smaller and the text a bit larger than the icons. That
-        # gives the text a bigger share of the width => bigger printed text.
-        icon_px = max(1, int(round(height_px * 0.65)))
-        text_px = max(20, int(round(height_px * 1.4)))
-
-        bands = []
-        for item in items:
-            logo = self._load_logo_gray(str(item.get("path", "")), icon_px)
-            text = item.get("text")
-            if text:
-                logo = self._compose_logo_text(logo, str(text), font_px=text_px)
-            bands.append(logo)
-
-        if not bands:
+        icons = [
+            (self._load_logo_gray(str(item.get("path", "")), icon_px), item.get("text"))
+            for item in items
+        ]
+        if not icons:
             raise ValueError("IMAGE_ROW requires at least one item")
 
-        total_w = sum(b.width for b in bands) + gap_px * (len(bands) - 1)
+        # ~0.9x the icon keeps the text in scale with the printer's 24-dot font.
+        font_px = max(min_font_px, int(round(icon_px * 0.9)))
+        while True:
+            bands = [
+                self._compose_logo_text(icon, str(text), font_px=font_px, stroke_width=0)
+                if text
+                else icon
+                for icon, text in icons
+            ]
+            total_w = sum(b.width for b in bands) + gap_px * (len(bands) - 1)
+            if total_w <= grid_w or font_px <= min_font_px:
+                break
+            font_px -= 1
+
         max_h = max(b.height for b in bands)
         canvas = Image.new("L", (total_w, max_h), 255)
         x = 0
@@ -306,7 +338,7 @@ class PrintService:
             canvas.paste(band, (x, y))
             x += band.width + gap_px
 
-        return self._raster_band_bytes(canvas, align_bytes)
+        return self._raster_band_bytes(canvas, align, dither=False)
 
     def _rendered_to_bytes(self, rendered: str) -> bytes:
         pattern = re.compile(r"\[\[\[IMG:([A-Za-z0-9+/=]+)\]\]\]")
@@ -325,7 +357,7 @@ class PrintService:
                 out.extend(
                     self._build_image_row_bytes(
                         items=payload["row"],
-                        height_cm=float(payload.get("height_cm", 0.5)),
+                        height_cm=float(payload.get("height_cm", 0.3)),
                         align=str(payload.get("align", "center")),
                         gap_cm=float(payload.get("gap_cm", 0.4)),
                     )

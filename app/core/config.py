@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     default_printer_port: int = 9100
     # Discovery: timeout in seconds when scanning for printers
     discovery_timeout_seconds: float = 1.0
+    # Width of the receipt text grid in printer dots: 40 template columns x the
+    # 12-dot Font A. Centred images are padded to this width so they share a
+    # centre line with centred text; centring on the paper instead (576 dots on
+    # 80mm stock) would push them 48 dots right of the 40-column layout.
+    receipt_width_dots: int = 480
 
     sqlite_db_path: Path = Path(__file__).resolve().parent.parent.parent / "printers.sqlite3"
 
